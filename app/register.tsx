@@ -13,9 +13,9 @@ import React from "react";
 import { useRouter } from "expo-router";
 
 const RegisterPage = () => {
+  const router = useRouter();
   const [email, setEmail] = React.useState<string>("");
   const [password, setPassword] = React.useState<string>("");
-  const router = useRouter();
 
   const signUp = () => {
     createUserWithEmailAndPassword(auth, email, password)
@@ -99,4 +99,5 @@ const styles = StyleSheet.create({
     color: "white",
   },
 });
+
 export default RegisterPage;

@@ -6,8 +6,9 @@ import { Camera } from "expo-camera";
 import MyCamera from "./components/myCamera";
 import RegisterPage from "./register";
 import useAuth from "./hooks/useAuth";
+import withAuthentication from "./hocs/withAuthentication";
 
-const Home = () => {
+const HomePage = () => {
   const router = useRouter();
   const user = useAuth();
   console.log("ax", user);
@@ -72,4 +73,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Home;
+export default withAuthentication(HomePage);

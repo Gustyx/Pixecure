@@ -1,8 +1,5 @@
 import { auth } from "../firebase.config";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import {
   TouchableOpacity,
   View,
@@ -16,9 +13,9 @@ import React from "react";
 import { useRouter } from "expo-router";
 
 const LoginPage = () => {
+  const router = useRouter();
   const [email, setEmail] = React.useState<string>("");
   const [password, setPassword] = React.useState<string>("");
-  const router = useRouter();
 
   const signIn = () => {
     signInWithEmailAndPassword(auth, email, password)
@@ -30,7 +27,6 @@ const LoginPage = () => {
         if (error.code === "auth/invalid-login-credentials") {
           Alert.alert("Login credentials are invalid!");
         }
-
         if (error.code === "auth/invalid-email") {
           Alert.alert("That email address is invalid!");
         }
@@ -102,4 +98,5 @@ const styles = StyleSheet.create({
     color: "white",
   },
 });
+
 export default LoginPage;

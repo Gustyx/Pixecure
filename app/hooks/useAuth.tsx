@@ -8,12 +8,6 @@ const useAuth = () => {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<User>();
 
-  // Handle user state changes
-  //   const onAuthStateChanged = (user) => {
-  //     setUser(user);
-  //     if (initializing) setInitializing(false);
-  //   };
-
   useEffect(() => {
     const subscriber = onAuthStateChanged(auth, (user) => {
       setUser(user);
