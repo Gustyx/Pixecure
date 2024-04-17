@@ -1,63 +1,31 @@
-import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from "react-native";
-import { Stack } from "expo-router";
-import { Camera } from "expo-camera";
-import MyCamera from "../src/pages/components/myCamera";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Pressable,
+} from "react-native";
+import { useRouter } from "expo-router";
 
 const Home = () => {
-  const [startCamera, setStartCamera] = React.useState<boolean>(false);
+  const router = useRouter();
 
-  const __startCamera = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    if (status === "granted") {
-      // do something
-      setStartCamera(true);
-    } else {
-      Alert.alert("Access denied");
-    }
-  };
-
-  const handleExitCamera = () => {
-    setStartCamera(false);
-  };
-
-  return startCamera ? (
-    <MyCamera onExitCamera={handleExitCamera} />
-  ) : (
-    <View style={styles.container}>
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#fff",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
+  return (
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.replace("/login")}
       >
-        <TouchableOpacity
-          onPress={__startCamera}
-          style={{
-            width: 130,
-            borderRadius: 4,
-            backgroundColor: "#14274e",
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
-            height: 40,
-          }}
-        >
-          <Text
-            style={{
-              color: "#fff",
-              fontWeight: "bold",
-              textAlign: "center",
-            }}
-          >
-            Take picture
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <StatusBar style="auto" />
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.replace("/register")}
+      >
+        <Text style={styles.buttonText}>Create account</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -68,6 +36,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+  },
+  button: {
+    width: 130,
+    borderRadius: 4,
+    backgroundColor: "#14274e",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 40,
+    margin: 10,
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
 

@@ -2,6 +2,7 @@
   "expo": {
     "name": "FitnessProTrack",
     "slug": "FitnessProTrack",
+    "scheme": "FitnessProTrack",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -42,7 +43,6 @@
           "recordAudioAndroid": true
         }
       ]
-    ],
-    "scheme": "your-app-scheme"
+    ]
   }
 }
