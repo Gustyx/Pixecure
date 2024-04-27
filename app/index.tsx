@@ -9,14 +9,14 @@ const Home = () => {
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.replace("/login")}
+        onPress={() => router.push("/login")}
       >
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.replace("/register")}
+        onPress={() => router.push("/register")}
       >
         <Text style={styles.buttonText}>Create account</Text>
       </TouchableOpacity>

@@ -36,7 +36,7 @@ const LoginPage = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.expiryLabel}>Create Account</Text>
+      <Text style={styles.expiryLabel}>Log In</Text>
       <TextInput
         placeholder="Email"
         placeholderTextColor={"white"}
@@ -55,7 +55,7 @@ const LoginPage = () => {
         style={styles.input}
       />
       <TouchableOpacity onPress={signIn} style={styles.loginButton}>
-        <Text style={styles.signupText}>signUp</Text>
+        <Text style={styles.signupText}>logIn</Text>
       </TouchableOpacity>
     </View>
   );
