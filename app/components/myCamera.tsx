@@ -47,7 +47,7 @@ const MyCamera = ({ onExitCamera }) => {
       {previewVisible && capturedImage ? (
         <MyCameraPreview
           onExitPreview={handleExitCameraPreview}
-          photo={capturedImage}
+          image={capturedImage}
         />
       ) : (
         <Camera
