@@ -36,7 +36,7 @@ const RegisterPage = () => {
         await setDoc(userRef, {
           uid: uid,
         });
-        router.push("/home");
+        router.replace("/home");
       })
       .catch((error) => {
         if (error.code === "auth/email-already-in-use") {
