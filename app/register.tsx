@@ -1,4 +1,4 @@
-import { auth } from "../firebase.config";
+import { auth, db } from "../firebase.config";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import {
   TouchableOpacity,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import React from "react";
 import { useRouter } from "expo-router";
+import { addDoc, collection, doc, setDoc } from "firebase/firestore";
 
 const RegisterPage = () => {
   const router = useRouter();
@@ -19,9 +20,23 @@ const RegisterPage = () => {
 
   const signUp = () => {
     createUserWithEmailAndPassword(auth, email, password)
-      .then(() => {
+      .then(async () => {
         Alert.alert("User created successfully!");
-        router.replace("/home");
+        // await addDoc(collection(db, "users"), {
+        //   uid: auth.currentUser?.uid,
+        // })
+        //   .then(() => {
+        //     router.replace("/home");
+        //   })
+        //   .catch((error) => {
+        //     Alert.alert("Error:", error.message);
+        //   });
+        const uid = auth.currentUser?.uid;
+        const userRef = doc(db, "users", uid);
+        await setDoc(userRef, {
+          uid: uid,
+        });
+        router.push("/home");
       })
       .catch((error) => {
         if (error.code === "auth/email-already-in-use") {

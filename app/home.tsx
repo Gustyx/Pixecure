@@ -11,7 +11,7 @@ import withAuthentication from "./hocs/withAuthentication";
 const HomePage = () => {
   const router = useRouter();
   const user = useAuth();
-  console.log("ax", user);
+  // console.log("ax", user);
   const [startCamera, setStartCamera] = React.useState<boolean>(false);
 
   const __startCamera = async () => {

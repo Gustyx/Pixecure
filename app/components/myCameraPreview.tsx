@@ -8,8 +8,15 @@ import {
   Alert,
 } from "react-native";
 import { Stack } from "expo-router";
-import { storage } from "../../firebase.config";
+import { auth, db, storage } from "../../firebase.config";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import {
+  addDoc,
+  collection,
+  doc,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
   const __closeCameraPreview = () => {
@@ -19,24 +26,40 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
 
   const saveImage = () => {
     if (image) {
+      const currentUserId = auth.currentUser?.uid;
+      const userRef = doc(db, "users", currentUserId);
+      // const imagesCollectionRef = collection(userRef, "images");
       const imageName = image.uri.slice(-16, -4);
-      uploadImage(image.uri, imageName)
-        .then((downloadURL) => {
+      const metadata = {
+        customMetadata: {
+          createdBy: currentUserId,
+          description: "descriere",
+        },
+      };
+      uploadImage(image.uri, imageName, metadata)
+        .then(async (downloadURL) => {
           Alert.alert("Image saved.");
           console.log("Image saved. URL:", downloadURL);
+          // await addDoc(imagesCollectionRef, {
+          //   url: downloadURL,
+          //   name: imageName,
+          // });
+          await updateDoc(userRef, {
+            images: arrayUnion(downloadURL),
+          });
         })
         .catch((error) => {
-          Alert.alert("Could now save image.");
+          Alert.alert("Could not save image.");
           console.log(error);
         });
     }
   };
 
-  const uploadImage = async (uri, name) => {
+  const uploadImage = async (uri, name, metadata) => {
     const respone = await fetch(uri);
     const blob = await respone.blob();
     const imageRef = ref(storage, imageFolderPath + name);
-    await uploadBytes(imageRef, blob);
+    await uploadBytes(imageRef, blob, metadata);
     const downloadURL = await getDownloadURL(imageRef);
 
     return downloadURL;
