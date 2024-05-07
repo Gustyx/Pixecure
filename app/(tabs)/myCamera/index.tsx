@@ -1,15 +1,17 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
   Dimensions,
+  Alert,
 } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, router, useFocusEffect } from "expo-router";
 import { Camera } from "expo-camera";
 import { CameraType } from "expo-camera/build/Camera.types";
 import MyCameraPreview from "./myCameraPreview";
+import { useIsFocused } from "@react-navigation/native";
 
 const MyCamera = ({ onExitCamera }) => {
   let camera;
@@ -20,12 +22,58 @@ const MyCamera = ({ onExitCamera }) => {
   const [cameraType, setCameraType] = React.useState<CameraType>(
     CameraType.back
   );
+  const [cameraActive, setCameraActive] = React.useState<boolean>(false);
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    // Initialize camera and setup event listeners
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      if (status === "granted") {
+        setCameraActive(true);
+      } else {
+        Alert.alert("Access denied");
+      }
+    })();
+
+    return () => {
+      // Cleanup logic: Remove event listeners or release resources
+    };
+  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      // Code to execute when the tab screen is focused
+      console.log("MyCamera tab is focused");
+      setCameraActive(true);
+
+      return () => {
+        // Optional cleanup code
+      };
+    }, [])
+  );
+  useEffect(() => {
+    if (!isFocused) {
+      // Code to execute when leaving the tab
+      console.log("Leaving MyCamera tab...");
+      setCameraActive(false);
+    }
+
+    return () => {
+      // Cleanup function to execute when leaving the tab
+      console.log("Cleanup function executed when leaving the tab");
+    };
+  }, [isFocused]);
 
   const __takePicture = async () => {
     if (!camera) return;
     const photo = await camera.takePictureAsync();
     setPreviewVisible(true);
     setCapturedImage(photo);
+    // console.log(photo);
+    // router.push({
+    //   pathname: "myCamera/myCameraPreview",
+    //   params: photo,
+    // });
   };
 
   const __switchCamera = () => {
@@ -50,34 +98,36 @@ const MyCamera = ({ onExitCamera }) => {
           image={capturedImage}
         />
       ) : (
-        <Camera
-          style={{ flex: 1, width: screenWidth, height: screenHeight }}
-          type={cameraType}
-          ref={(r) => {
-            camera = r;
-          }}
-        >
-          <View style={styles.container}>
-            <TouchableOpacity
+        cameraActive && (
+          <Camera
+            style={{ flex: 1, width: screenWidth, height: screenHeight }}
+            type={cameraType}
+            ref={(r) => {
+              camera = r;
+            }}
+          >
+            <View style={styles.container}>
+              {/* <TouchableOpacity
               onPress={__closeCamera}
               style={styles.closeButton}
             >
               <Text style={styles.buttonText}>X</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.flipButton}
-              onPress={__switchCamera}
-            >
-              <Text style={styles.buttonText}>Flip</Text>
-            </TouchableOpacity>
-            <View style={styles.captureButtonContainer}>
+            </TouchableOpacity> */}
               <TouchableOpacity
-                onPress={__takePicture}
-                style={styles.captureButton}
-              />
+                style={styles.flipButton}
+                onPress={__switchCamera}
+              >
+                <Text style={styles.buttonText}>Flip</Text>
+              </TouchableOpacity>
+              <View style={styles.captureButtonContainer}>
+                <TouchableOpacity
+                  onPress={__takePicture}
+                  style={styles.captureButton}
+                />
+              </View>
             </View>
-          </View>
-        </Camera>
+          </Camera>
+        )
       )}
     </View>
   );

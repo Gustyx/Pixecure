@@ -1,5 +1,8 @@
 import { auth, db } from "../firebase.config";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 import {
   TouchableOpacity,
   View,
@@ -17,6 +20,23 @@ const RegisterPage = () => {
   const router = useRouter();
   const [email, setEmail] = React.useState<string>("");
   const [password, setPassword] = React.useState<string>("");
+
+  const mockCringe = () => {
+    signInWithEmailAndPassword(auth, "q@q.co", "123456")
+      .then((userCredential) => {
+        const user = userCredential.user;
+        router.replace("/(tabs)/home");
+      })
+      .catch((error) => {
+        if (error.code === "auth/invalid-login-credentials") {
+          Alert.alert("Login credentials are invalid!");
+        }
+        if (error.code === "auth/invalid-email") {
+          Alert.alert("That email address is invalid!");
+        }
+        console.error(error);
+      });
+  };
 
   const signUp = () => {
     createUserWithEmailAndPassword(auth, email, password)
@@ -70,7 +90,7 @@ const RegisterPage = () => {
         autoCapitalize="none"
         style={styles.input}
       />
-      <TouchableOpacity onPress={signUp} style={styles.loginButton}>
+      <TouchableOpacity onPress={mockCringe} style={styles.loginButton}>
         <Text style={styles.signupText}>signUp</Text>
       </TouchableOpacity>
     </View>
