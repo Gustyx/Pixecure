@@ -2,12 +2,10 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Alert,
   ScrollView,
-  ImageBackground,
   ActivityIndicator,
   Image,
   Dimensions,
@@ -91,7 +89,7 @@ const HomePage = () => {
   return (
     <View style={styles.container}>
       <ScrollView
-        // style={styles.ImageContainer}
+        style={styles.ImageContainer}
         contentContainerStyle={{
           flexDirection: "row",
           flexWrap: "wrap",
@@ -149,7 +147,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   ImageContainer: {
-    marginHorizontal: 16,
     width: "100%",
   },
 });
