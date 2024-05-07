@@ -13,9 +13,6 @@ import {
   Dimensions,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { Camera } from "expo-camera";
-import MyCamera from "./myCamera";
-import RegisterPage from "../register";
 import useAuth from "../hooks/useAuth";
 import withAuthentication from "../hocs/withAuthentication";
 import { doc, getDoc } from "firebase/firestore";
@@ -24,14 +21,12 @@ import { auth, db } from "../../firebase.config";
 const HomePage = () => {
   const router = useRouter();
   const user = useAuth();
-  const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
-  const [startCamera, setStartCamera] = React.useState<boolean>(false);
   useEffect(() => {
     // Retrieve the document from Firestore
     const getImageUrl = async () => {
       try {
-        const docSnap = await getDoc(doc(db, "users", auth.currentUser?.uid));
+        const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
         if (docSnap.exists()) {
           // Get the image URL from the document data
           setImages(docSnap.data().images);
@@ -45,21 +40,6 @@ const HomePage = () => {
 
     getImageUrl();
   }, []);
-
-  // console.log("ax", user);
-
-  const __startCamera = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    if (status === "granted") {
-      setStartCamera(true);
-    } else {
-      Alert.alert("Access denied");
-    }
-  };
-
-  const handleExitCamera = () => {
-    setStartCamera(false);
-  };
 
   return (
     <View style={styles.container}>

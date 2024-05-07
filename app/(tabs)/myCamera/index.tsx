@@ -13,7 +13,7 @@ import { CameraType } from "expo-camera/build/Camera.types";
 import MyCameraPreview from "./myCameraPreview";
 import { useIsFocused } from "@react-navigation/native";
 
-const MyCamera = ({ onExitCamera }) => {
+const MyCamera = () => {
   let camera;
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = screenWidth * (3 / 4);
@@ -40,6 +40,7 @@ const MyCamera = ({ onExitCamera }) => {
       // Cleanup logic: Remove event listeners or release resources
     };
   }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       // Code to execute when the tab screen is focused
@@ -51,6 +52,7 @@ const MyCamera = ({ onExitCamera }) => {
       };
     }, [])
   );
+
   useEffect(() => {
     if (!isFocused) {
       // Code to execute when leaving the tab
@@ -82,10 +84,6 @@ const MyCamera = ({ onExitCamera }) => {
     );
   };
 
-  const __closeCamera = () => {
-    onExitCamera();
-  };
-
   const handleExitCameraPreview = () => {
     setPreviewVisible(false);
   };
@@ -107,12 +105,6 @@ const MyCamera = ({ onExitCamera }) => {
             }}
           >
             <View style={styles.container}>
-              {/* <TouchableOpacity
-              onPress={__closeCamera}
-              style={styles.closeButton}
-            >
-              <Text style={styles.buttonText}>X</Text>
-            </TouchableOpacity> */}
               <TouchableOpacity
                 style={styles.flipButton}
                 onPress={__switchCamera}
@@ -140,11 +132,6 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     flexDirection: "row",
     position: "relative",
-  },
-  closeButton: {
-    position: "absolute",
-    top: "5%",
-    right: "5%",
   },
   flipButton: {
     position: "absolute",
