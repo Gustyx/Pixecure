@@ -7,7 +7,6 @@ import {
   ImageBackground,
   Alert,
 } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
 import { auth, db, storage } from "../../../firebase.config";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
@@ -17,13 +16,12 @@ import {
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
-import { useRoute } from "@react-navigation/native";
+import { imageFolderPath } from "../../constants";
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
   const __closeCameraPreview = () => {
     onExitPreview();
   };
-  const imageFolderPath = "images/";
 
   const saveImage = () => {
     if (image) {
