@@ -7,8 +7,8 @@ import {
   ImageBackground,
   Alert,
 } from "react-native";
-import { Stack } from "expo-router";
-import { auth, db, storage } from "../../firebase.config";
+import { Stack, router, useLocalSearchParams } from "expo-router";
+import { auth, db, storage } from "../../../firebase.config";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
   addDoc,
@@ -17,6 +17,7 @@ import {
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
+import { useRoute } from "@react-navigation/native";
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
   const __closeCameraPreview = () => {
@@ -47,6 +48,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           await updateDoc(userRef, {
             images: arrayUnion(downloadURL),
           });
+          __closeCameraPreview();
         })
         .catch((error) => {
           Alert.alert("Could not save image.");
