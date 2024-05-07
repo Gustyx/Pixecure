@@ -43,7 +43,6 @@ const HomePage = () => {
 
   useFocusEffect(
     React.useCallback(() => {
-      console.log("am intrat");
       const getImageUrl = async () => {
         try {
           const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
@@ -72,7 +71,7 @@ const HomePage = () => {
         Alert.alert("Image deleted.");
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
       });
 
     const currentUserId = auth.currentUser?.uid;
@@ -98,7 +97,6 @@ const HomePage = () => {
         horizontal={false}
       >
         {images.map((image, i) => {
-          console.log(image);
           return (
             <TouchableOpacity
               style={{

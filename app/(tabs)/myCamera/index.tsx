@@ -26,7 +26,6 @@ const MyCamera = () => {
   const isFocused = useIsFocused();
 
   useEffect(() => {
-    // Initialize camera and setup event listeners
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       if (status === "granted") {
@@ -44,7 +43,6 @@ const MyCamera = () => {
   useFocusEffect(
     React.useCallback(() => {
       // Code to execute when the tab screen is focused
-      console.log("MyCamera tab is focused");
       setCameraActive(true);
 
       return () => {
@@ -66,7 +64,7 @@ const MyCamera = () => {
     };
   }, [isFocused]);
 
-  const __takePicture = async () => {
+  const takePicture = async () => {
     if (!camera) return;
     const photo = await camera.takePictureAsync();
     setPreviewVisible(true);
@@ -78,7 +76,7 @@ const MyCamera = () => {
     // });
   };
 
-  const __switchCamera = () => {
+  const switchCamera = () => {
     setCameraType((prevType) =>
       prevType === CameraType.back ? CameraType.front : CameraType.back
     );
@@ -107,13 +105,13 @@ const MyCamera = () => {
             <View style={styles.container}>
               <TouchableOpacity
                 style={styles.flipButton}
-                onPress={__switchCamera}
+                onPress={switchCamera}
               >
                 <Text style={styles.buttonText}>Flip</Text>
               </TouchableOpacity>
               <View style={styles.captureButtonContainer}>
                 <TouchableOpacity
-                  onPress={__takePicture}
+                  onPress={takePicture}
                   style={styles.captureButton}
                 />
               </View>

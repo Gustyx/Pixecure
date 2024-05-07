@@ -19,7 +19,7 @@ import {
 import { imageFolderPath } from "../../constants";
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
-  const __closeCameraPreview = () => {
+  const closeCameraPreview = () => {
     onExitPreview();
   };
 
@@ -46,7 +46,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           await updateDoc(userRef, {
             images: arrayUnion(downloadURL),
           });
-          __closeCameraPreview();
+          closeCameraPreview();
         })
         .catch((error) => {
           Alert.alert("Could not save image.");
@@ -73,10 +73,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           flex: 1,
         }}
       />
-      <TouchableOpacity
-        onPress={__closeCameraPreview}
-        style={styles.closeButton}
-      >
+      <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>
         <Text style={styles.buttonText}>X</Text>
       </TouchableOpacity>
 
