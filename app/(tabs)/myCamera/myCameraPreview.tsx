@@ -7,7 +7,6 @@ import {
   ImageBackground,
   Alert,
 } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
 import { auth, db, storage } from "../../../firebase.config";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
@@ -17,13 +16,12 @@ import {
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
-import { useRoute } from "@react-navigation/native";
+import { imageFolderPath } from "../../constants";
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
-  const __closeCameraPreview = () => {
+  const closeCameraPreview = () => {
     onExitPreview();
   };
-  const imageFolderPath = "images/";
 
   const saveImage = () => {
     if (image) {
@@ -48,7 +46,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           await updateDoc(userRef, {
             images: arrayUnion(downloadURL),
           });
-          __closeCameraPreview();
+          closeCameraPreview();
         })
         .catch((error) => {
           Alert.alert("Could not save image.");
@@ -75,10 +73,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           flex: 1,
         }}
       />
-      <TouchableOpacity
-        onPress={__closeCameraPreview}
-        style={styles.closeButton}
-      >
+      <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>
         <Text style={styles.buttonText}>X</Text>
       </TouchableOpacity>
 
