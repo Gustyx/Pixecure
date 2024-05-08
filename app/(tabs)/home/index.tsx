@@ -11,35 +11,17 @@ import {
   Dimensions,
 } from "react-native";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
-import useAuth from "../hooks/useAuth";
-import withAuthentication from "../hocs/withAuthentication";
+import useAuth from "../../hooks/useAuth";
+import withAuthentication from "../../hocs/withAuthentication";
 import { arrayRemove, doc, getDoc, updateDoc } from "firebase/firestore";
-import { auth, db, storage } from "../../firebase.config";
+import { auth, db, storage } from "../../../firebase.config";
 import { deleteObject, ref } from "firebase/storage";
-import { imageFolderPath } from "../constants";
+import { imageFolderPath } from "../../constants";
 
 const HomePage = () => {
   const router = useRouter();
   const user = useAuth();
   const [images, setImages] = useState([]);
-  // useEffect(() => {
-  //   // Retrieve the document from Firestore
-  //   const getImageUrl = async () => {
-  //     try {
-  //       const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-  //       if (docSnap.exists()) {
-  //         // Get the image URL from the document data
-  //         setImages(docSnap.data().images);
-  //       } else {
-  //         console.log("No such document!");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error getting document:", error);
-  //     }
-  //   };
-
-  //   getImageUrl();
-  // }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -47,7 +29,6 @@ const HomePage = () => {
         try {
           const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
           if (docSnap.exists()) {
-            // Get the image URL from the document data
             setImages(docSnap.data().images);
           } else {
             console.log("No such document!");
@@ -60,6 +41,11 @@ const HomePage = () => {
       getImageUrl();
     }, [])
   );
+
+  const inspectImage = (imageUrl) => {
+    imageUrl = encodeURIComponent(imageUrl);
+    router.push({ pathname: `/home/${imageUrl}` });
+  };
 
   const deleteImage = async (url, index) => {
     const startIndex = url.indexOf("%2F") + 3;
@@ -103,6 +89,7 @@ const HomePage = () => {
                 padding: 1,
               }}
               key={i}
+              onPress={() => inspectImage(image.toString())}
               onLongPress={() => deleteImage(image, i)}
             >
               <Image

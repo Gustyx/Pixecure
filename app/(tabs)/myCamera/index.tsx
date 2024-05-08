@@ -96,7 +96,7 @@ const MyCamera = () => {
       ) : (
         cameraActive && (
           <Camera
-            style={{ flex: 1, width: screenWidth, height: screenHeight }}
+            style={{ flex: 1 }}
             type={cameraType}
             ref={(r) => {
               camera = r;
