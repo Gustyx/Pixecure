@@ -82,28 +82,29 @@ const HomePage = () => {
         }}
         horizontal={false}
       >
-        {images.map((image, i) => {
-          return (
-            <TouchableOpacity
-              style={{
-                padding: 1,
-              }}
-              key={i}
-              onPress={() => inspectImage(image.toString())}
-              onLongPress={() => deleteImage(image, i)}
-            >
-              <Image
-                source={{ uri: image }}
-                style={[
-                  {
-                    width: Dimensions.get("window").width / 5 - 2,
-                    height: (Dimensions.get("window").width / 5 - 2) * 1.5,
-                  },
-                ]}
-              />
-            </TouchableOpacity>
-          );
-        })}
+        {images &&
+          images.map((image, i) => {
+            return (
+              <TouchableOpacity
+                style={{
+                  padding: 1,
+                }}
+                key={i}
+                onPress={() => inspectImage(image.toString())}
+                onLongPress={() => deleteImage(image, i)}
+              >
+                <Image
+                  source={{ uri: image }}
+                  style={[
+                    {
+                      width: Dimensions.get("window").width / 5 - 2,
+                      height: (Dimensions.get("window").width / 5 - 2) * 1.5,
+                    },
+                  ]}
+                />
+              </TouchableOpacity>
+            );
+          })}
       </ScrollView>
       <StatusBar style="auto" />
     </View>
