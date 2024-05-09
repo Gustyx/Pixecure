@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -8,7 +8,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
-  Dimensions,
 } from "react-native";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import useAuth from "../../hooks/useAuth";
@@ -16,7 +15,7 @@ import withAuthentication from "../../hocs/withAuthentication";
 import { arrayRemove, doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db, storage } from "../../../firebase.config";
 import { deleteObject, ref } from "firebase/storage";
-import { imageFolderPath } from "../../constants";
+import { imageFolderPath, screenWidth } from "../../constants";
 
 const HomePage = () => {
   const router = useRouter();
@@ -97,8 +96,8 @@ const HomePage = () => {
                   source={{ uri: image }}
                   style={[
                     {
-                      width: Dimensions.get("window").width / 5 - 2,
-                      height: (Dimensions.get("window").width / 5 - 2) * 1.5,
+                      width: screenWidth / 5 - 2,
+                      height: (screenWidth / 5 - 2) * 1.5,
                     },
                   ]}
                 />

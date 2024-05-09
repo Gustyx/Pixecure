@@ -1,12 +1,5 @@
 import React, { useEffect } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  Dimensions,
-  Alert,
-} from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, Alert } from "react-native";
 import { Stack, router, useFocusEffect } from "expo-router";
 import { Camera } from "expo-camera";
 import { CameraType } from "expo-camera/build/Camera.types";
@@ -15,8 +8,6 @@ import { useIsFocused } from "@react-navigation/native";
 
 const MyCamera = () => {
   let camera;
-  const screenWidth = Dimensions.get("window").width;
-  const screenHeight = screenWidth * (3 / 4);
   const [previewVisible, setPreviewVisible] = React.useState<boolean>(false);
   const [capturedImage, setCapturedImage] = React.useState<any>(null);
   const [cameraType, setCameraType] = React.useState<CameraType>(
