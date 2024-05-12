@@ -3,15 +3,12 @@ import React, { useEffect } from "react";
 import { StyleSheet, View, Image, Text } from "react-native";
 import { storage } from "../../../firebase.config";
 import { ref, getMetadata } from "firebase/storage";
-import { imageFolderPath, screenWidth } from "../../constants";
+import { imageDetails, imageFolderPath, screenWidth } from "../../constants";
 
 const Inspect = () => {
   const params = useLocalSearchParams();
   const url = Array.isArray(params.url) ? params.url[0] : params.url;
-  const [imageDetails, setImageDetails] = React.useState({
-    createdBy: "",
-    description: "",
-  });
+  const [thisImageDetails, setThisImageDetails] = React.useState({});
 
   useEffect(() => {
     const getImageMetadata = () => {
@@ -24,12 +21,8 @@ const Inspect = () => {
           .then((metadata) => {
             console.log(metadata);
             console.log(metadata.customMetadata);
-            const x = metadata.customMetadata;
-            setImageDetails({
-              createdBy: x.createdBy,
-              description: x.description,
-            });
-            console.log(imageDetails);
+            setThisImageDetails(metadata.customMetadata);
+            console.log(thisImageDetails);
           })
           .catch((error) => {
             console.error("Error getting metadata: ", error);
@@ -56,7 +49,16 @@ const Inspect = () => {
             marginTop: "5%",
           }}
         />
-        <Text style={{ marginLeft: "10%" }}>{imageDetails.description}</Text>
+        {Object.keys(thisImageDetails) &&
+          Object.keys(thisImageDetails).map((key, i) => {
+            return (
+              <View key={i} style={styles.detailsContainer}>
+                <Text style={{ marginLeft: "10%" }}>
+                  {key}: {thisImageDetails[key]}
+                </Text>
+              </View>
+            );
+          })}
       </View>
     </View>
   );
@@ -69,6 +71,10 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     flexDirection: "row",
     position: "relative",
+  },
+  detailsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 });
 

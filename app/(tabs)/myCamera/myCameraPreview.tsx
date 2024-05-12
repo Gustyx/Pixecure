@@ -59,6 +59,8 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       let customMetadata = {};
       Object.keys(thisImageDetails).forEach((key) => {
         customMetadata[key] = thisImageDetails[key];
+        if (key === "date" && customMetadata[key] === "")
+          customMetadata[key] = date.toLocaleDateString();
       });
       const metadata = {
         customMetadata,
