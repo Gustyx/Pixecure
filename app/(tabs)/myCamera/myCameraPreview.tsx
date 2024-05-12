@@ -5,7 +5,10 @@ import {
   View,
   TouchableOpacity,
   ImageBackground,
+  Image,
   Alert,
+  TextInput,
+  ScrollView,
 } from "react-native";
 import { auth, db, storage } from "../../../firebase.config";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
@@ -16,24 +19,49 @@ import {
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
-import { imageFolderPath } from "../../constants";
+import {
+  imageFolderPath,
+  screenWidth,
+  imageDetails,
+  screenHeight,
+} from "../../constants";
+// import DatePicker from "react-native-date-picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
+  const [addDetails, setAddDetails] = React.useState(false);
+  const [date, setDate] = React.useState(new Date(Date.now()));
+  const [show, setShow] = React.useState(false);
+  const keys = Object.keys(imageDetails);
+  const [thisImageDetails, setThisImageDetails] = React.useState(imageDetails);
+
   const closeCameraPreview = () => {
     onExitPreview();
   };
 
+  const onDateChange = (event, selectedDate) => {
+    setShow(false);
+    setDate(selectedDate);
+  };
+  const onDetailsTextChange = (key, value) => {
+    const updatedDetails = { ...thisImageDetails };
+    updatedDetails[key] = value;
+    setThisImageDetails(updatedDetails);
+  };
+
   const saveImage = () => {
-    if (image) {
+    if (!addDetails) setAddDetails(true);
+    else if (image) {
       const currentUserId = auth.currentUser?.uid;
       const userRef = doc(db, "users", currentUserId);
       // const imagesCollectionRef = collection(userRef, "images");
       const imageName = image.uri.slice(-16, -4);
+      let customMetadata = {};
+      Object.keys(thisImageDetails).forEach((key) => {
+        customMetadata[key] = thisImageDetails[key];
+      });
       const metadata = {
-        customMetadata: {
-          createdBy: currentUserId,
-          description: "descriere",
-        },
+        customMetadata,
       };
       uploadImage(image.uri, imageName, metadata)
         .then(async (downloadURL) => {
@@ -67,12 +95,68 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
 
   return (
     <View style={styles.container}>
-      <ImageBackground
-        source={{ uri: image && image.uri }}
-        style={{
-          flex: 1,
-        }}
-      />
+      {!addDetails ? (
+        <ImageBackground
+          source={{ uri: image && image.uri }}
+          style={{
+            flex: 1,
+          }}
+        />
+      ) : (
+        <ScrollView>
+          <TouchableOpacity onPress={() => setAddDetails(false)}>
+            <Image
+              source={{ uri: image && image.uri }}
+              style={{
+                width: screenWidth / 2,
+                height: (screenWidth / 2) * 1.5,
+                // alignItems: "center",
+                // justifyContent: "center",
+                margin: "25%",
+                marginTop: "5%",
+                marginBottom: "10%",
+              }}
+            />
+          </TouchableOpacity>
+          {keys &&
+            keys.map((key, i) => {
+              return (
+                <View key={i} style={styles.detailsContainer}>
+                  <Text style={{ marginLeft: "10%" }}>{key}: </Text>
+                  {key !== "date" ? (
+                    <TextInput
+                      // placeholder={key}
+                      placeholderTextColor={"white"}
+                      value={thisImageDetails[key]}
+                      onChangeText={(value) => onDetailsTextChange(key, value)}
+                      autoCapitalize="none"
+                      style={styles.input}
+                    />
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShow(true);
+                      }}
+                      style={styles.input}
+                    >
+                      <Text style={{ color: "white" }}>
+                        {date.toLocaleDateString()}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  {show && (
+                    <DateTimePicker
+                      testID="dateTimePicker"
+                      value={date}
+                      mode={"date"}
+                      onChange={onDateChange}
+                    />
+                  )}
+                </View>
+              );
+            })}
+        </ScrollView>
+      )}
       <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>
         <Text style={styles.buttonText}>X</Text>
       </TouchableOpacity>
@@ -94,17 +178,33 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
+    backgroundColor: "black",
     top: "5%",
     right: "5%",
   },
   saveButton: {
     position: "absolute",
+    backgroundColor: "black",
     bottom: "5%",
     right: "5%",
   },
   buttonText: {
     fontSize: 20,
     color: "#fff",
+  },
+  detailsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  input: {
+    marginVertical: 10,
+    width: (screenWidth * 66) / 200,
+    height: (screenHeight * 6.6) / 200,
+    backgroundColor: "black",
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    marginLeft: "10%",
+    color: "white",
   },
 });
 
