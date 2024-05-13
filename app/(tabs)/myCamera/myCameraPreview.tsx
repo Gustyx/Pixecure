@@ -121,6 +121,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
           style={{
             width: screenWidth,
             height: screenWidth * imageScale,
+            alignSelf: "center",
           }}
         />
       ) : (
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
-    backgroundColor: "transparent",
+    backgroundColor: "white",
     flexDirection: "row",
     position: "relative",
     justifyContent: "center",

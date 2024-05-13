@@ -16,7 +16,6 @@ const MyCamera = () => {
   );
   const [cameraActive, setCameraActive] = React.useState<boolean>(false);
   const isFocused = useIsFocused();
-  console.log(screenWidth);
 
   useEffect(() => {
     (async () => {
@@ -73,7 +72,7 @@ const MyCamera = () => {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       {previewVisible && capturedImage ? (
         <MyCameraPreview
           onExitPreview={handleExitCameraPreview}
@@ -81,31 +80,34 @@ const MyCamera = () => {
         />
       ) : (
         cameraActive && (
-          <Camera
-            style={{
-              width: screenWidth,
-              height: (screenWidth * 4) / 3,
-            }}
-            type={cameraType}
-            ref={(r) => {
-              camera = r;
-            }}
-          >
-            <View style={styles.container}>
-              <TouchableOpacity
-                style={styles.flipButton}
-                onPress={switchCamera}
-              >
-                <Text style={styles.buttonText}>Flip</Text>
-              </TouchableOpacity>
-              <View style={styles.captureButtonContainer}>
+          <View style={styles.container}>
+            <Camera
+              style={{
+                width: screenWidth,
+                height: (screenWidth * 4) / 3,
+                alignSelf: "flex-start",
+              }}
+              type={cameraType}
+              ref={(r) => {
+                camera = r;
+              }}
+            >
+              <View style={styles.container}>
                 <TouchableOpacity
-                  onPress={takePicture}
-                  style={styles.captureButton}
-                />
+                  style={styles.flipButton}
+                  onPress={switchCamera}
+                >
+                  <Text style={styles.buttonText}>Flip</Text>
+                </TouchableOpacity>
               </View>
+            </Camera>
+            <View style={styles.captureButtonContainer}>
+              <TouchableOpacity
+                onPress={takePicture}
+                style={styles.captureButton}
+              />
             </View>
-          </Camera>
+          </View>
         )
       )}
     </View>
@@ -119,6 +121,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     flexDirection: "row",
     position: "relative",
+    justifyContent: "center",
   },
   flipButton: {
     position: "absolute",
@@ -128,14 +131,14 @@ const styles = StyleSheet.create({
   },
   captureButtonContainer: {
     position: "absolute",
-    padding: 20,
     width: "100%",
-    alignSelf: "center",
+    alignSelf: "flex-end",
     flex: 1,
-    bottom: 0,
     alignItems: "center",
+    backgroundColor: "blue",
   },
   captureButton: {
+    alignSelf: "center",
     width: 70,
     height: 70,
     borderRadius: 50,

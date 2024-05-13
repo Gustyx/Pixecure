@@ -180,17 +180,17 @@ const Inspect = () => {
                       </Text>
                     </TouchableOpacity>
                   )}
-                  {showCalendar && (
-                    <DateTimePicker
-                      testID="dateTimePicker"
-                      value={date}
-                      mode={"date"}
-                      onChange={onDateChange}
-                    />
-                  )}
                 </View>
               );
             })}
+          {showCalendar && (
+            <DateTimePicker
+              testID="dateTimePicker"
+              value={date}
+              mode={"date"}
+              onChange={onDateChange}
+            />
+          )}
         </ScrollView>
       )}
       <TouchableOpacity
