@@ -31,13 +31,12 @@ import {
 import { ImageSize } from "expo-camera";
 import ImagePreview from "../../imagePreview";
 
-const MyCameraPreview = ({ onExitPreview, image }) => {
+const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
-  const [date, setDate] = useState<Date>(new Date(Date.now()));
-  const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
   const [imageScale, setImageScale] = useState<number>(1);
+  const date: Date = new Date(Date.now());
 
   useEffect(() => {
     const fetchImageSize = async () => {
@@ -45,7 +44,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         const { width, height }: ImageSize = await new Promise(
           (resolve, reject) => {
             Image.getSize(
-              image.uri,
+              imageUri,
               (width, height) => resolve({ width, height }),
               reject
             );
@@ -64,14 +63,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     onExitPreview();
   };
 
-  const onDateChange = (event, selectedDate) => {
-    setShowCalendar(false);
-    setDate(selectedDate);
-    const updatedDetails: ImageDetails = { ...thisImageDetails };
-    updatedDetails["date"] = selectedDate.toLocaleDateString();
-    setThisImageDetails(updatedDetails);
-  };
-
   const onDetailsTextChange = (key, value) => {
     const updatedDetails: ImageDetails = { ...thisImageDetails };
     updatedDetails[key] = value;
@@ -80,23 +71,18 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
 
   const saveImage = () => {
     if (!displayDetails) setDisplayDetails(true);
-    else if (image) {
+    else if (imageUri) {
       const currentUserId = auth.currentUser?.uid;
       const userRef = doc(db, "users", currentUserId);
       // const imagesCollectionRef = collection(userRef, "images");
-      const imageName = image.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
-      let customMetadata: ImageDetails;
+      const imageName = imageUri.match(/([^\/]+)(?=\.\w+$)/)[0];
+      thisImageDetails["date"] = date.toLocaleDateString();
 
-      keys.forEach((key) => {
-        customMetadata[key] = thisImageDetails[key];
-        if (key === "date" && customMetadata[key] === "")
-          customMetadata[key] = date.toLocaleDateString();
-      });
       const metadata = {
-        customMetadata,
+        customMetadata: { ...thisImageDetails },
       };
 
-      uploadImage(image.uri, imageName, metadata)
+      uploadImage(imageUri, imageName, metadata)
         .then(async (downloadURL) => {
           Alert.alert("Image saved.");
           console.log("Image saved. URL:", downloadURL);
@@ -130,7 +116,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     <View style={styles.container}>
       {!displayDetails ? (
         <ImageBackground
-          source={{ uri: image && image.uri }}
+          source={{ uri: imageUri }}
           style={{
             // flex: 1,
             width: screenWidth,
@@ -148,7 +134,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
             }}
           >
             <Image
-              source={{ uri: image && image.uri }}
+              source={{ uri: imageUri }}
               style={{
                 width: screenWidth / 2,
                 height: (screenWidth / 2) * imageScale,
@@ -170,31 +156,15 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
                       style={styles.input}
                     />
                   ) : (
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowCalendar(true);
-                      }}
-                      style={styles.input}
-                    >
-                      <Text style={{ color: "white" }}>
-                        {date.toLocaleDateString()}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                  {showCalendar && (
-                    <DateTimePicker
-                      testID="dateTimePicker"
-                      value={date}
-                      mode={"date"}
-                      onChange={onDateChange}
-                    />
+                    <Text style={styles.input}>
+                      {date.toLocaleDateString()}
+                    </Text>
                   )}
                 </View>
               );
             })}
         </ScrollView>
       )}
-      {/* <ImagePreview image={image} onTouch={saveImage} /> */}
       <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>
         <Text style={styles.buttonText}>X</Text>
       </TouchableOpacity>
