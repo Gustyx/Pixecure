@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -23,19 +23,21 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   imageFolderPath,
   screenWidth,
-  imageDetails,
+  keys,
   screenHeight,
+  ImageDetails,
+  imageDetails,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
 import ImagePreview from "../../imagePreview";
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
-  const [displayDetails, setDisplayDetails] = React.useState(false);
-  const [date, setDate] = React.useState(new Date(Date.now()));
-  const [showCalendar, setShowCalendar] = React.useState(false);
-  const [thisImageDetails, setThisImageDetails] = React.useState(imageDetails);
-  const [imageScale, setImageScale] = React.useState(1);
-  const keys = Object.keys(imageDetails);
+  const [displayDetails, setDisplayDetails] = useState<boolean>(false);
+  const [date, setDate] = useState<Date>(new Date(Date.now()));
+  const [showCalendar, setShowCalendar] = useState<boolean>(false);
+  const [thisImageDetails, setThisImageDetails] =
+    useState<ImageDetails>(imageDetails);
+  const [imageScale, setImageScale] = useState<number>(1);
 
   useEffect(() => {
     const fetchImageSize = async () => {
@@ -65,10 +67,13 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   const onDateChange = (event, selectedDate) => {
     setShowCalendar(false);
     setDate(selectedDate);
+    const updatedDetails: ImageDetails = { ...thisImageDetails };
+    updatedDetails["date"] = selectedDate.toLocaleDateString();
+    setThisImageDetails(updatedDetails);
   };
 
   const onDetailsTextChange = (key, value) => {
-    const updatedDetails = { ...thisImageDetails };
+    const updatedDetails: ImageDetails = { ...thisImageDetails };
     updatedDetails[key] = value;
     setThisImageDetails(updatedDetails);
   };
@@ -80,9 +85,9 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       const userRef = doc(db, "users", currentUserId);
       // const imagesCollectionRef = collection(userRef, "images");
       const imageName = image.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
-      let customMetadata = {};
+      let customMetadata: ImageDetails;
 
-      Object.keys(thisImageDetails).forEach((key) => {
+      keys.forEach((key) => {
         customMetadata[key] = thisImageDetails[key];
         if (key === "date" && customMetadata[key] === "")
           customMetadata[key] = date.toLocaleDateString();

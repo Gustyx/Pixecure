@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -14,22 +14,26 @@ import {
 import { storage } from "../../../firebase.config";
 import { ref, getMetadata, updateMetadata } from "firebase/storage";
 import {
-  imageDetails,
+  ImageDetails,
+  keys,
   imageFolderPath,
   screenHeight,
   screenWidth,
+  imageDetails,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import ImagePreview from "../../imagePreview";
 
 const Inspect = () => {
   const params = useLocalSearchParams();
   const url = Array.isArray(params.url) ? params.url[0] : params.url;
-  const [thisImageDetails, setThisImageDetails] = React.useState({});
-  const [displayDetails, setDisplayDetails] = React.useState(false);
-  const [imageScale, setImageScale] = React.useState(1);
-  const [date, setDate] = React.useState(new Date(Date.now()));
-  const [showCalendar, setShowCalendar] = React.useState(false);
+  const [date, setDate] = useState<Date>();
+  const [thisImageDetails, setThisImageDetails] =
+    useState<ImageDetails>(imageDetails);
+  const [displayDetails, setDisplayDetails] = useState<boolean>(false);
+  const [imageScale, setImageScale] = useState<number>(1);
+  const [showCalendar, setShowCalendar] = useState<boolean>(false);
 
   const getImageRef = () => {
     const encodedPath = encodeURIComponent(imageFolderPath);
@@ -64,7 +68,16 @@ const Inspect = () => {
         const ref = getImageRef();
         getMetadata(ref)
           .then((metadata) => {
-            setThisImageDetails(metadata.customMetadata);
+            setThisImageDetails(
+              metadata.customMetadata as unknown as ImageDetails
+            );
+            const [day, month, year] = metadata.customMetadata.date.split("/");
+            const date = new Date(
+              parseInt(year),
+              parseInt(month) - 1,
+              parseInt(day)
+            );
+            setDate(new Date(date));
           })
           .catch((error) => {
             console.error("Error getting metadata: ", error);
@@ -81,10 +94,13 @@ const Inspect = () => {
   const onDateChange = (event, selectedDate) => {
     setShowCalendar(false);
     setDate(selectedDate);
+    const updatedDetails: ImageDetails = { ...thisImageDetails };
+    updatedDetails["date"] = selectedDate.toLocaleDateString();
+    setThisImageDetails(updatedDetails);
   };
 
   const onDetailsTextChange = (key, value) => {
-    const updatedDetails = { ...thisImageDetails };
+    const updatedDetails: ImageDetails = { ...thisImageDetails };
     updatedDetails[key] = value;
     setThisImageDetails(updatedDetails);
   };
@@ -92,13 +108,13 @@ const Inspect = () => {
   const updateImageMetadata = () => {
     if (!displayDetails) setDisplayDetails(true);
     else if (url) {
-      let newCustomMetadata = {};
-      Object.keys(thisImageDetails).forEach((key) => {
-        newCustomMetadata[key] = thisImageDetails[key];
-      });
+      // let newCustomMetadata: ImageDetails = thisImageDetails;
+      // keys.forEach((key) => {
+      //   newCustomMetadata[key] = thisImageDetails[key];
+      // });
       const newMetadata = {
         customMetadata: {
-          ...newCustomMetadata,
+          ...thisImageDetails,
         },
       };
       const ref = getImageRef();
@@ -121,19 +137,14 @@ const Inspect = () => {
     <View style={styles.container}>
       <Stack.Screen options={{ headerTitle: "Inspect Page" }} />
       {!displayDetails ? (
-        <View style={styles.container}>
-          <ImageBackground
-            source={{ uri: url }}
-            style={{
-              // flex: 1,
-              width: screenWidth,
-              height: screenWidth * imageScale,
-            }}
-          />
-          {/* <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>
-        <Text style={styles.buttonText}>X</Text>
-      </TouchableOpacity> */}
-        </View>
+        <ImageBackground
+          source={{ uri: url }}
+          style={{
+            // flex: 1,
+            width: screenWidth,
+            height: screenWidth * imageScale,
+          }}
+        />
       ) : (
         <ScrollView>
           <TouchableOpacity
@@ -152,14 +163,9 @@ const Inspect = () => {
               }}
             />
           </TouchableOpacity>
-          {Object.keys(thisImageDetails) &&
-            Object.keys(thisImageDetails).map((key, i) => {
+          {keys &&
+            keys.map((key, i) => {
               return (
-                // <View key={i} style={styles.detailsContainer}>
-                //   <Text style={{ marginLeft: "10%" }}>
-                //     {key}: {thisImageDetails[key]}
-                //   </Text>
-                // </View>
                 <View key={i} style={styles.detailsContainer}>
                   <Text style={{ marginLeft: "10%" }}>{key}: </Text>
                   {key !== "date" ? (
@@ -179,7 +185,7 @@ const Inspect = () => {
                       style={styles.input}
                     >
                       <Text style={{ color: "white" }}>
-                        {date.toLocaleDateString()}
+                        {thisImageDetails["date"]}
                       </Text>
                     </TouchableOpacity>
                   )}
