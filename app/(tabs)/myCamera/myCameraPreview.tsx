@@ -30,7 +30,7 @@ import { ImageSize } from "expo-camera";
 import ImagePreview from "../../imagePreview";
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
-  const [addDetails, setAddDetails] = React.useState(false);
+  const [displayDetails, setDisplayDetails] = React.useState(false);
   const [date, setDate] = React.useState(new Date(Date.now()));
   const [showCalendar, setShowCalendar] = React.useState(false);
   const [thisImageDetails, setThisImageDetails] = React.useState(imageDetails);
@@ -74,7 +74,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   };
 
   const saveImage = () => {
-    if (!addDetails) setAddDetails(true);
+    if (!displayDetails) setDisplayDetails(true);
     else if (image) {
       const currentUserId = auth.currentUser?.uid;
       const userRef = doc(db, "users", currentUserId);
@@ -123,7 +123,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
 
   return (
     <View style={styles.container}>
-      {!addDetails ? (
+      {!displayDetails ? (
         <ImageBackground
           source={{ uri: image && image.uri }}
           style={{
@@ -135,7 +135,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       ) : (
         <ScrollView>
           <TouchableOpacity
-            onPress={() => setAddDetails(false)}
+            onPress={() => setDisplayDetails(false)}
             style={{
               alignSelf: "center",
               marginTop: "5%",
@@ -195,7 +195,9 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={saveImage} style={styles.saveButton}>
-        <Text style={styles.buttonText}>Save</Text>
+        <Text style={styles.buttonText}>
+          {!displayDetails ? "Details" : "Save"}
+        </Text>
       </TouchableOpacity>
     </View>
   );

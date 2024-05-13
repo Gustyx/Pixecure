@@ -18,7 +18,7 @@ const Inspect = () => {
   const params = useLocalSearchParams();
   const url = Array.isArray(params.url) ? params.url[0] : params.url;
   const [thisImageDetails, setThisImageDetails] = React.useState({});
-  const [displayDetails, setDisplayDetails] = React.useState(true);
+  const [displayDetails, setDisplayDetails] = React.useState(false);
   const [imageScale, setImageScale] = React.useState(1);
 
   useEffect(() => {
@@ -79,13 +79,6 @@ const Inspect = () => {
           {/* <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>
         <Text style={styles.buttonText}>X</Text>
       </TouchableOpacity> */}
-
-          <TouchableOpacity
-            onPress={() => setDisplayDetails(true)}
-            style={styles.saveButton}
-          >
-            <Text style={styles.buttonText}>Details</Text>
-          </TouchableOpacity>
         </View>
       ) : (
         <ScrollView>
@@ -117,6 +110,14 @@ const Inspect = () => {
             })}
         </ScrollView>
       )}
+      <TouchableOpacity
+        onPress={() => setDisplayDetails(true)}
+        style={styles.saveButton}
+      >
+        <Text style={styles.buttonText}>
+          {!displayDetails ? "Details" : "Edit"}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
