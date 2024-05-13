@@ -1,3 +1,4 @@
+import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
@@ -19,7 +20,6 @@ import {
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   imageFolderPath,
   screenWidth,
@@ -32,10 +32,10 @@ import { ImageSize } from "expo-camera";
 import ImagePreview from "../../imagePreview";
 
 const MyCameraPreview = ({ onExitPreview, imageUri }) => {
+  const [imageScale, setImageScale] = useState<number>(1);
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
-  const [imageScale, setImageScale] = useState<number>(1);
   const date: Date = new Date(Date.now());
 
   useEffect(() => {
@@ -114,11 +114,11 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ headerTitle: "Preview Picture" }} />
       {!displayDetails ? (
         <ImageBackground
           source={{ uri: imageUri }}
           style={{
-            // flex: 1,
             width: screenWidth,
             height: screenWidth * imageScale,
           }}
@@ -148,11 +148,9 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
                   <Text style={{ marginLeft: "10%" }}>{key}: </Text>
                   {key !== "date" ? (
                     <TextInput
-                      // placeholder={key}
-                      placeholderTextColor={"white"}
                       value={thisImageDetails[key]}
                       onChangeText={(value) => onDetailsTextChange(key, value)}
-                      autoCapitalize="none"
+                      autoCapitalize="sentences"
                       style={styles.input}
                     />
                   ) : (

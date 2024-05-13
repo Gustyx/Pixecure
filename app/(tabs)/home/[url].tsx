@@ -28,12 +28,12 @@ import ImagePreview from "../../imagePreview";
 const Inspect = () => {
   const params = useLocalSearchParams();
   const url = Array.isArray(params.url) ? params.url[0] : params.url;
-  const [date, setDate] = useState<Date>();
+  const [imageScale, setImageScale] = useState<number>(1);
+  const [displayDetails, setDisplayDetails] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
-  const [displayDetails, setDisplayDetails] = useState<boolean>(false);
-  const [imageScale, setImageScale] = useState<number>(1);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
+  const [date, setDate] = useState<Date>();
 
   const getImageRef = () => {
     const encodedPath = encodeURIComponent(imageFolderPath);
@@ -91,6 +91,12 @@ const Inspect = () => {
     getImageMetadata();
   }, []);
 
+  const onDetailsTextChange = (key, value) => {
+    const updatedDetails: ImageDetails = { ...thisImageDetails };
+    updatedDetails[key] = value;
+    setThisImageDetails(updatedDetails);
+  };
+
   const onDateChange = (event, selectedDate) => {
     setShowCalendar(false);
     setDate(selectedDate);
@@ -99,19 +105,9 @@ const Inspect = () => {
     setThisImageDetails(updatedDetails);
   };
 
-  const onDetailsTextChange = (key, value) => {
-    const updatedDetails: ImageDetails = { ...thisImageDetails };
-    updatedDetails[key] = value;
-    setThisImageDetails(updatedDetails);
-  };
-
   const updateImageMetadata = () => {
     if (!displayDetails) setDisplayDetails(true);
     else if (url) {
-      // let newCustomMetadata: ImageDetails = thisImageDetails;
-      // keys.forEach((key) => {
-      //   newCustomMetadata[key] = thisImageDetails[key];
-      // });
       const newMetadata = {
         customMetadata: {
           ...thisImageDetails,
@@ -121,12 +117,10 @@ const Inspect = () => {
 
       updateMetadata(ref, newMetadata)
         .then((metadata) => {
-          // Updated metadata for 'images/forest.jpg' is returned in the Promise
           Alert.alert("New Details saved.");
           console.log("Metadata saved:", metadata.customMetadata);
         })
         .catch((error) => {
-          // Uh-oh, an error occurred!
           Alert.alert("Could not update details.");
           console.error("Error updating image metadata: ", error);
         });
@@ -140,7 +134,6 @@ const Inspect = () => {
         <ImageBackground
           source={{ uri: url }}
           style={{
-            // flex: 1,
             width: screenWidth,
             height: screenWidth * imageScale,
           }}
@@ -170,11 +163,9 @@ const Inspect = () => {
                   <Text style={{ marginLeft: "10%" }}>{key}: </Text>
                   {key !== "date" ? (
                     <TextInput
-                      // placeholder={key}
-                      placeholderTextColor={"white"}
                       value={thisImageDetails[key]}
                       onChangeText={(value) => onDetailsTextChange(key, value)}
-                      autoCapitalize="none"
+                      autoCapitalize="sentences"
                       style={styles.input}
                     />
                   ) : (

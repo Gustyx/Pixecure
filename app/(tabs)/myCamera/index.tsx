@@ -5,6 +5,7 @@ import { Camera } from "expo-camera";
 import { CameraType } from "expo-camera/build/Camera.types";
 import MyCameraPreview from "./myCameraPreview";
 import { useIsFocused } from "@react-navigation/native";
+import { screenWidth } from "../../constants";
 
 const MyCamera = () => {
   let camera;
@@ -15,6 +16,7 @@ const MyCamera = () => {
   );
   const [cameraActive, setCameraActive] = React.useState<boolean>(false);
   const isFocused = useIsFocused();
+  console.log(screenWidth);
 
   useEffect(() => {
     (async () => {
@@ -80,7 +82,10 @@ const MyCamera = () => {
       ) : (
         cameraActive && (
           <Camera
-            style={{ flex: 1 }}
+            style={{
+              width: screenWidth,
+              height: (screenWidth * 4) / 3,
+            }}
             type={cameraType}
             ref={(r) => {
               camera = r;
