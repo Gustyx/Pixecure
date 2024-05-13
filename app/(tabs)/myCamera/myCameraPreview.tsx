@@ -19,27 +19,27 @@ import {
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   imageFolderPath,
   screenWidth,
   imageDetails,
   screenHeight,
 } from "../../constants";
-import DateTimePicker from "@react-native-community/datetimepicker";
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
   const [addDetails, setAddDetails] = React.useState(false);
   const [date, setDate] = React.useState(new Date(Date.now()));
-  const [show, setShow] = React.useState(false);
-  const keys = Object.keys(imageDetails);
+  const [showCalendar, setShowCalendar] = React.useState(false);
   const [thisImageDetails, setThisImageDetails] = React.useState(imageDetails);
+  const keys = Object.keys(imageDetails);
 
   const closeCameraPreview = () => {
     onExitPreview();
   };
 
   const onDateChange = (event, selectedDate) => {
-    setShow(false);
+    setShowCalendar(false);
     setDate(selectedDate);
   };
 
@@ -57,6 +57,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       // const imagesCollectionRef = collection(userRef, "images");
       const imageName = image.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
       let customMetadata = {};
+
       Object.keys(thisImageDetails).forEach((key) => {
         customMetadata[key] = thisImageDetails[key];
         if (key === "date" && customMetadata[key] === "")
@@ -65,6 +66,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       const metadata = {
         customMetadata,
       };
+
       uploadImage(image.uri, imageName, metadata)
         .then(async (downloadURL) => {
           Alert.alert("Image saved.");
@@ -80,7 +82,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         })
         .catch((error) => {
           Alert.alert("Could not save image.");
-          console.log(error);
+          console.error(error);
         });
     }
   };
@@ -137,7 +139,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
                   ) : (
                     <TouchableOpacity
                       onPress={() => {
-                        setShow(true);
+                        setShowCalendar(true);
                       }}
                       style={styles.input}
                     >
@@ -146,7 +148,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
                       </Text>
                     </TouchableOpacity>
                   )}
-                  {show && (
+                  {showCalendar && (
                     <DateTimePicker
                       testID="dateTimePicker"
                       value={date}

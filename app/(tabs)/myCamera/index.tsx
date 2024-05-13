@@ -45,13 +45,11 @@ const MyCamera = () => {
   useEffect(() => {
     if (!isFocused) {
       // Code to execute when leaving the tab
-      console.log("Leaving MyCamera tab...");
       setCameraActive(false);
     }
 
     return () => {
       // Cleanup function to execute when leaving the tab
-      console.log("Cleanup function executed when leaving the tab");
     };
   }, [isFocused]);
 
@@ -60,11 +58,6 @@ const MyCamera = () => {
     const photo = await camera.takePictureAsync();
     setPreviewVisible(true);
     setCapturedImage(photo);
-    // console.log(photo);
-    // router.push({
-    //   pathname: "myCamera/myCameraPreview",
-    //   params: photo,
-    // });
   };
 
   const switchCamera = () => {
