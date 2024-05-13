@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
   },
   flipButton: {
     position: "absolute",
+    backgroundColor: "black",
     top: "5%",
     left: "5%",
   },
