@@ -13,16 +13,15 @@ const Inspect = () => {
   useEffect(() => {
     const getImageMetadata = () => {
       try {
-        const startIndex = url.indexOf("%2F") + 3;
+        const encodedPath = encodeURIComponent(imageFolderPath);
+        const startIndex = url.indexOf(encodedPath) + encodedPath.length;
         const endIndex = url.indexOf("?alt=media");
         const imageId = url.substring(startIndex, endIndex);
         const imageRef = ref(storage, imageFolderPath + imageId);
+
         getMetadata(imageRef)
           .then((metadata) => {
-            console.log(metadata);
-            console.log(metadata.customMetadata);
             setThisImageDetails(metadata.customMetadata);
-            console.log(thisImageDetails);
           })
           .catch((error) => {
             console.error("Error getting metadata: ", error);
@@ -31,6 +30,7 @@ const Inspect = () => {
         console.error("Error getting metadata: ", error);
       }
     };
+
     getImageMetadata();
   }, []);
 

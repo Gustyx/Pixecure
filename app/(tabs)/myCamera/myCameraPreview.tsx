@@ -25,7 +25,6 @@ import {
   imageDetails,
   screenHeight,
 } from "../../constants";
-// import DatePicker from "react-native-date-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
@@ -43,6 +42,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     setShow(false);
     setDate(selectedDate);
   };
+
   const onDetailsTextChange = (key, value) => {
     const updatedDetails = { ...thisImageDetails };
     updatedDetails[key] = value;
@@ -55,7 +55,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       const currentUserId = auth.currentUser?.uid;
       const userRef = doc(db, "users", currentUserId);
       // const imagesCollectionRef = collection(userRef, "images");
-      const imageName = image.uri.slice(-16, -4);
+      const imageName = image.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
       let customMetadata = {};
       Object.keys(thisImageDetails).forEach((key) => {
         customMetadata[key] = thisImageDetails[key];

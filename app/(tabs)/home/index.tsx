@@ -24,7 +24,7 @@ const HomePage = () => {
 
   useFocusEffect(
     React.useCallback(() => {
-      const getImageUrl = async () => {
+      const getImages = async () => {
         try {
           const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
           if (docSnap.exists()) {
@@ -37,7 +37,7 @@ const HomePage = () => {
         }
       };
 
-      getImageUrl();
+      getImages();
     }, [])
   );
 
@@ -51,6 +51,7 @@ const HomePage = () => {
     const endIndex = url.indexOf("?alt=media");
     const imageId = url.substring(startIndex, endIndex);
     const imageRef = ref(storage, imageFolderPath + imageId);
+
     deleteObject(imageRef)
       .then(() => {
         Alert.alert("Image deleted.");
@@ -89,7 +90,7 @@ const HomePage = () => {
                   padding: 1,
                 }}
                 key={i}
-                onPress={() => inspectImage(image.toString())}
+                onPress={() => inspectImage(image)}
                 onLongPress={() => deleteImage(image, i)}
               >
                 <Image
