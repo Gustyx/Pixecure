@@ -1,12 +1,5 @@
 import React, { useEffect } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  Dimensions,
-  Alert,
-} from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, Alert } from "react-native";
 import { Stack, router, useFocusEffect } from "expo-router";
 import { Camera } from "expo-camera";
 import { CameraType } from "expo-camera/build/Camera.types";
@@ -15,8 +8,6 @@ import { useIsFocused } from "@react-navigation/native";
 
 const MyCamera = () => {
   let camera;
-  const screenWidth = Dimensions.get("window").width;
-  const screenHeight = screenWidth * (3 / 4);
   const [previewVisible, setPreviewVisible] = React.useState<boolean>(false);
   const [capturedImage, setCapturedImage] = React.useState<any>(null);
   const [cameraType, setCameraType] = React.useState<CameraType>(
@@ -54,13 +45,11 @@ const MyCamera = () => {
   useEffect(() => {
     if (!isFocused) {
       // Code to execute when leaving the tab
-      console.log("Leaving MyCamera tab...");
       setCameraActive(false);
     }
 
     return () => {
       // Cleanup function to execute when leaving the tab
-      console.log("Cleanup function executed when leaving the tab");
     };
   }, [isFocused]);
 
@@ -69,11 +58,6 @@ const MyCamera = () => {
     const photo = await camera.takePictureAsync();
     setPreviewVisible(true);
     setCapturedImage(photo);
-    // console.log(photo);
-    // router.push({
-    //   pathname: "myCamera/myCameraPreview",
-    //   params: photo,
-    // });
   };
 
   const switchCamera = () => {
@@ -133,6 +117,7 @@ const styles = StyleSheet.create({
   },
   flipButton: {
     position: "absolute",
+    backgroundColor: "black",
     top: "5%",
     left: "5%",
   },

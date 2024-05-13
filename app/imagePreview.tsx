@@ -1,42 +1,26 @@
-import React, { useEffect } from "react";
+import { StatusBar } from "expo-status-bar";
 import {
+  ImageBackground,
+  ScrollView,
   StyleSheet,
   Text,
-  View,
   TouchableOpacity,
-  ImageBackground,
+  View,
   Image,
-  Alert,
   TextInput,
-  ScrollView,
 } from "react-native";
-import { auth, db, storage } from "../../../firebase.config";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import {
-  addDoc,
-  collection,
-  doc,
-  updateDoc,
-  arrayUnion,
-} from "firebase/firestore";
+import { imageDetails, screenHeight, screenWidth } from "./constants";
+import React, { useEffect } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import {
-  imageFolderPath,
-  screenWidth,
-  imageDetails,
-  screenHeight,
-} from "../../constants";
 import { ImageSize } from "expo-camera";
-import ImagePreview from "../../imagePreview";
 
-const MyCameraPreview = ({ onExitPreview, image }) => {
-  const [displayDetails, setDisplayDetails] = React.useState(false);
+const ImagePreview = ({ image, onTouch }) => {
+  const [addDetails, setAddDetails] = React.useState(false);
   const [date, setDate] = React.useState(new Date(Date.now()));
   const [showCalendar, setShowCalendar] = React.useState(false);
   const [thisImageDetails, setThisImageDetails] = React.useState(imageDetails);
   const [imageScale, setImageScale] = React.useState(1);
   const keys = Object.keys(imageDetails);
-
   useEffect(() => {
     const fetchImageSize = async () => {
       try {
@@ -57,73 +41,23 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
 
     fetchImageSize();
   }, []);
-
-  const closeCameraPreview = () => {
-    onExitPreview();
-  };
-
   const onDateChange = (event, selectedDate) => {
     setShowCalendar(false);
     setDate(selectedDate);
   };
-
   const onDetailsTextChange = (key, value) => {
     const updatedDetails = { ...thisImageDetails };
     updatedDetails[key] = value;
     setThisImageDetails(updatedDetails);
   };
-
   const saveImage = () => {
-    if (!displayDetails) setDisplayDetails(true);
-    else if (image) {
-      const currentUserId = auth.currentUser?.uid;
-      const userRef = doc(db, "users", currentUserId);
-      // const imagesCollectionRef = collection(userRef, "images");
-      const imageName = image.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
-      let customMetadata = {};
-
-      Object.keys(thisImageDetails).forEach((key) => {
-        customMetadata[key] = thisImageDetails[key];
-        if (key === "date" && customMetadata[key] === "")
-          customMetadata[key] = date.toLocaleDateString();
-      });
-      const metadata = {
-        customMetadata,
-      };
-
-      uploadImage(image.uri, imageName, metadata)
-        .then(async (downloadURL) => {
-          Alert.alert("Image saved.");
-          console.log("Image saved. URL:", downloadURL);
-          // await addDoc(imagesCollectionRef, {
-          //   url: downloadURL,
-          //   name: imageName,
-          // });
-          await updateDoc(userRef, {
-            images: arrayUnion(downloadURL),
-          });
-          closeCameraPreview();
-        })
-        .catch((error) => {
-          Alert.alert("Could not save image.");
-          console.error(error);
-        });
-    }
-  };
-
-  const uploadImage = async (uri, name, metadata) => {
-    const respone = await fetch(uri);
-    const blob = await respone.blob();
-    const imageRef = ref(storage, imageFolderPath + name);
-    await uploadBytes(imageRef, blob, metadata);
-    const downloadURL = await getDownloadURL(imageRef);
-
-    return downloadURL;
+    // if (!addDetails) setAddDetails(true);
+    onTouch();
   };
 
   return (
     <View style={styles.container}>
-      {!displayDetails ? (
+      {!addDetails ? (
         <ImageBackground
           source={{ uri: image && image.uri }}
           style={{
@@ -135,7 +69,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       ) : (
         <ScrollView>
           <TouchableOpacity
-            onPress={() => setDisplayDetails(false)}
+            onPress={() => setAddDetails(false)}
             style={{
               alignSelf: "center",
               marginTop: "5%",
@@ -189,15 +123,8 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
             })}
         </ScrollView>
       )}
-      {/* <ImagePreview image={image} onTouch={saveImage} /> */}
-      <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>
-        <Text style={styles.buttonText}>X</Text>
-      </TouchableOpacity>
-
       <TouchableOpacity onPress={saveImage} style={styles.saveButton}>
-        <Text style={styles.buttonText}>
-          {!displayDetails ? "Details" : "Save"}
-        </Text>
+        <Text style={styles.buttonText}>Save</Text>
       </TouchableOpacity>
     </View>
   );
@@ -244,4 +171,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MyCameraPreview;
+export default ImagePreview;

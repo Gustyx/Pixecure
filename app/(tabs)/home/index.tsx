@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -8,7 +8,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
-  Dimensions,
 } from "react-native";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import useAuth from "../../hooks/useAuth";
@@ -16,7 +15,7 @@ import withAuthentication from "../../hocs/withAuthentication";
 import { arrayRemove, doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db, storage } from "../../../firebase.config";
 import { deleteObject, ref } from "firebase/storage";
-import { imageFolderPath } from "../../constants";
+import { imageFolderPath, screenWidth } from "../../constants";
 
 const HomePage = () => {
   const router = useRouter();
@@ -25,7 +24,7 @@ const HomePage = () => {
 
   useFocusEffect(
     React.useCallback(() => {
-      const getImageUrl = async () => {
+      const getImages = async () => {
         try {
           const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
           if (docSnap.exists()) {
@@ -38,7 +37,7 @@ const HomePage = () => {
         }
       };
 
-      getImageUrl();
+      getImages();
     }, [])
   );
 
@@ -52,6 +51,7 @@ const HomePage = () => {
     const endIndex = url.indexOf("?alt=media");
     const imageId = url.substring(startIndex, endIndex);
     const imageRef = ref(storage, imageFolderPath + imageId);
+
     deleteObject(imageRef)
       .then(() => {
         Alert.alert("Image deleted.");
@@ -82,28 +82,29 @@ const HomePage = () => {
         }}
         horizontal={false}
       >
-        {images.map((image, i) => {
-          return (
-            <TouchableOpacity
-              style={{
-                padding: 1,
-              }}
-              key={i}
-              onPress={() => inspectImage(image.toString())}
-              onLongPress={() => deleteImage(image, i)}
-            >
-              <Image
-                source={{ uri: image }}
-                style={[
-                  {
-                    width: Dimensions.get("window").width / 5 - 2,
-                    height: (Dimensions.get("window").width / 5 - 2) * 1.5,
-                  },
-                ]}
-              />
-            </TouchableOpacity>
-          );
-        })}
+        {images &&
+          images.map((image, i) => {
+            return (
+              <TouchableOpacity
+                style={{
+                  padding: 1,
+                }}
+                key={i}
+                onPress={() => inspectImage(image)}
+                onLongPress={() => deleteImage(image, i)}
+              >
+                <Image
+                  source={{ uri: image }}
+                  style={[
+                    {
+                      width: screenWidth / 5 - 2,
+                      height: (screenWidth / 5 - 2) * 1.5,
+                    },
+                  ]}
+                />
+              </TouchableOpacity>
+            );
+          })}
       </ScrollView>
       <StatusBar style="auto" />
     </View>

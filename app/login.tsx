@@ -24,7 +24,7 @@ const LoginPage = () => {
         router.replace("/home");
       })
       .catch((error) => {
-        if (error.code === "auth/invalid-login-credentials") {
+        if (error.code === "auth/invalid-credential") {
           Alert.alert("Login credentials are invalid!");
         }
         if (error.code === "auth/invalid-email") {

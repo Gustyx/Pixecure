@@ -16,7 +16,7 @@ const useAuth = () => {
     return subscriber;
   }, []);
 
-  if (initializing) return null;
+  if (!initializing) return user;
 
   //   if (!user) {
   //     return (
@@ -32,7 +32,7 @@ const useAuth = () => {
   //     </View>
   //   );
 
-  return user;
+  // return user;
 };
 
 export default useAuth;
