@@ -121,7 +121,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
           style={{
             width: screenWidth,
             height: screenWidth * imageScale,
-            alignSelf: "center",
+            alignSelf: "flex-start",
           }}
         />
       ) : (

@@ -73,6 +73,7 @@ const MyCamera = () => {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ headerTitle: "Take a Picture" }} />
       {previewVisible && capturedImage ? (
         <MyCameraPreview
           onExitPreview={handleExitCameraPreview}
@@ -80,7 +81,13 @@ const MyCamera = () => {
         />
       ) : (
         cameraActive && (
-          <View style={styles.container}>
+          <View
+            style={{
+              flexDirection: "column",
+              flexWrap: "wrap",
+              justifyContent: "flex-start",
+            }}
+          >
             <Camera
               style={{
                 width: screenWidth,
@@ -91,21 +98,18 @@ const MyCamera = () => {
               ref={(r) => {
                 camera = r;
               }}
-            >
-              <View style={styles.container}>
-                <TouchableOpacity
-                  style={styles.flipButton}
-                  onPress={switchCamera}
-                >
-                  <Text style={styles.buttonText}>Flip</Text>
-                </TouchableOpacity>
-              </View>
-            </Camera>
-            <View style={styles.captureButtonContainer}>
+            ></Camera>
+            <View style={styles.ButtonContainer}>
               <TouchableOpacity
                 onPress={takePicture}
                 style={styles.captureButton}
               />
+              <TouchableOpacity
+                style={styles.flipButton}
+                onPress={switchCamera}
+              >
+                <Text style={styles.buttonText}>Flip</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )
@@ -123,29 +127,31 @@ const styles = StyleSheet.create({
     position: "relative",
     justifyContent: "center",
   },
-  flipButton: {
-    position: "absolute",
-    backgroundColor: "black",
-    top: "5%",
-    left: "5%",
-  },
-  captureButtonContainer: {
-    position: "absolute",
-    width: "100%",
-    alignSelf: "flex-end",
+  ButtonContainer: {
     flex: 1,
+    backgroundColor: "black",
+    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "blue",
   },
   captureButton: {
-    alignSelf: "center",
-    width: 70,
-    height: 70,
-    borderRadius: 50,
+    width: 60,
+    height: 60,
+    borderRadius: 60,
     backgroundColor: "#fff",
   },
+  flipButton: {
+    position: "absolute",
+    right: "5%",
+    width: 40,
+    height: 40,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "white",
+  },
   buttonText: {
-    fontSize: 20,
+    fontSize: 15,
     color: "#fff",
   },
 });
