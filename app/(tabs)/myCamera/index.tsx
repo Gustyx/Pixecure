@@ -5,6 +5,7 @@ import { Camera } from "expo-camera";
 import { CameraType } from "expo-camera/build/Camera.types";
 import MyCameraPreview from "./myCameraPreview";
 import { useIsFocused } from "@react-navigation/native";
+import { screenWidth } from "../../constants";
 
 const MyCamera = () => {
   let camera;
@@ -71,36 +72,46 @@ const MyCamera = () => {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
+      <Stack.Screen options={{ headerTitle: "Take a Picture" }} />
       {previewVisible && capturedImage ? (
         <MyCameraPreview
           onExitPreview={handleExitCameraPreview}
-          image={capturedImage}
+          imageUri={capturedImage.uri}
         />
       ) : (
         cameraActive && (
-          <Camera
-            style={{ flex: 1 }}
-            type={cameraType}
-            ref={(r) => {
-              camera = r;
+          <View
+            style={{
+              flexDirection: "column",
+              flexWrap: "wrap",
+              justifyContent: "flex-start",
             }}
           >
-            <View style={styles.container}>
+            <Camera
+              style={{
+                width: screenWidth,
+                height: (screenWidth * 4) / 3,
+                alignSelf: "flex-start",
+              }}
+              type={cameraType}
+              ref={(r) => {
+                camera = r;
+              }}
+            ></Camera>
+            <View style={styles.ButtonContainer}>
+              <TouchableOpacity
+                onPress={takePicture}
+                style={styles.captureButton}
+              />
               <TouchableOpacity
                 style={styles.flipButton}
                 onPress={switchCamera}
               >
                 <Text style={styles.buttonText}>Flip</Text>
               </TouchableOpacity>
-              <View style={styles.captureButtonContainer}>
-                <TouchableOpacity
-                  onPress={takePicture}
-                  style={styles.captureButton}
-                />
-              </View>
             </View>
-          </Camera>
+          </View>
         )
       )}
     </View>
@@ -114,30 +125,33 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     flexDirection: "row",
     position: "relative",
+    justifyContent: "center",
   },
-  flipButton: {
-    position: "absolute",
-    backgroundColor: "black",
-    top: "5%",
-    left: "5%",
-  },
-  captureButtonContainer: {
-    position: "absolute",
-    padding: 20,
-    width: "100%",
-    alignSelf: "center",
+  ButtonContainer: {
     flex: 1,
-    bottom: 0,
+    backgroundColor: "black",
+    justifyContent: "center",
     alignItems: "center",
   },
   captureButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 50,
+    width: 60,
+    height: 60,
+    borderRadius: 60,
     backgroundColor: "#fff",
   },
+  flipButton: {
+    position: "absolute",
+    right: "5%",
+    width: 40,
+    height: 40,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "white",
+  },
   buttonText: {
-    fontSize: 20,
+    fontSize: 15,
     color: "#fff",
   },
 });

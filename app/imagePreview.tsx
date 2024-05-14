@@ -1,33 +1,50 @@
-import { StatusBar } from "expo-status-bar";
+import React, { useEffect } from "react";
 import {
-  ImageBackground,
-  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
+  TouchableOpacity,
+  ImageBackground,
   Image,
+  Alert,
   TextInput,
+  ScrollView,
 } from "react-native";
-import { imageDetails, screenHeight, screenWidth } from "./constants";
-import React, { useEffect } from "react";
+import { auth, db, storage } from "../firebase.config";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import {
+  addDoc,
+  collection,
+  doc,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import {
+  imageFolderPath,
+  screenWidth,
+  keys,
+  screenHeight,
+  ImageDetails,
+  imageDetails,
+} from "./constants";
 import { ImageSize } from "expo-camera";
 
-const ImagePreview = ({ image, onTouch }) => {
-  const [addDetails, setAddDetails] = React.useState(false);
-  const [date, setDate] = React.useState(new Date(Date.now()));
-  const [showCalendar, setShowCalendar] = React.useState(false);
-  const [thisImageDetails, setThisImageDetails] = React.useState(imageDetails);
-  const [imageScale, setImageScale] = React.useState(1);
-  const keys = Object.keys(imageDetails);
+const ImagePreview = ({ touch, onExitPreview, image }) => {
+  const [displayDetails, setDisplayDetails] = React.useState<boolean>(false);
+  const [date, setDate] = React.useState<Date>(new Date(Date.now()));
+  const [showCalendar, setShowCalendar] = React.useState<boolean>(false);
+  const [thisImageDetails, setThisImageDetails] =
+    React.useState<ImageDetails>(imageDetails);
+  const [imageScale, setImageScale] = React.useState<number>(1);
+
   useEffect(() => {
     const fetchImageSize = async () => {
       try {
         const { width, height }: ImageSize = await new Promise(
           (resolve, reject) => {
             Image.getSize(
-              image.uri,
+              image,
               (width, height) => resolve({ width, height }),
               reject
             );
@@ -41,25 +58,28 @@ const ImagePreview = ({ image, onTouch }) => {
 
     fetchImageSize();
   }, []);
+
+  const onTouch = () => {
+    if (!displayDetails) setDisplayDetails(true);
+    else touch();
+  };
+
   const onDateChange = (event, selectedDate) => {
     setShowCalendar(false);
     setDate(selectedDate);
   };
+
   const onDetailsTextChange = (key, value) => {
-    const updatedDetails = { ...thisImageDetails };
+    const updatedDetails: ImageDetails = { ...thisImageDetails };
     updatedDetails[key] = value;
     setThisImageDetails(updatedDetails);
-  };
-  const saveImage = () => {
-    // if (!addDetails) setAddDetails(true);
-    onTouch();
   };
 
   return (
     <View style={styles.container}>
-      {!addDetails ? (
+      {!displayDetails ? (
         <ImageBackground
-          source={{ uri: image && image.uri }}
+          source={{ uri: image }}
           style={{
             // flex: 1,
             width: screenWidth,
@@ -69,7 +89,7 @@ const ImagePreview = ({ image, onTouch }) => {
       ) : (
         <ScrollView>
           <TouchableOpacity
-            onPress={() => setAddDetails(false)}
+            onPress={() => setDisplayDetails(false)}
             style={{
               alignSelf: "center",
               marginTop: "5%",
@@ -77,7 +97,7 @@ const ImagePreview = ({ image, onTouch }) => {
             }}
           >
             <Image
-              source={{ uri: image && image.uri }}
+              source={{ uri: image }}
               style={{
                 width: screenWidth / 2,
                 height: (screenWidth / 2) * imageScale,
@@ -123,8 +143,12 @@ const ImagePreview = ({ image, onTouch }) => {
             })}
         </ScrollView>
       )}
-      <TouchableOpacity onPress={saveImage} style={styles.saveButton}>
-        <Text style={styles.buttonText}>Save</Text>
+      {/* <ImagePreview image={image} onTouch={saveImage} /> */}
+
+      <TouchableOpacity onPress={onTouch} style={styles.saveButton}>
+        <Text style={styles.buttonText}>
+          {!displayDetails ? "Details" : "Save"}
+        </Text>
       </TouchableOpacity>
     </View>
   );

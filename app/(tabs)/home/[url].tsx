@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -8,18 +8,42 @@ import {
   TouchableOpacity,
   ImageBackground,
   ScrollView,
+  TextInput,
+  Alert,
 } from "react-native";
 import { storage } from "../../../firebase.config";
-import { ref, getMetadata } from "firebase/storage";
-import { imageDetails, imageFolderPath, screenWidth } from "../../constants";
+import { ref, getMetadata, updateMetadata } from "firebase/storage";
+import {
+  ImageDetails,
+  keys,
+  imageFolderPath,
+  screenHeight,
+  screenWidth,
+  imageDetails,
+} from "../../constants";
 import { ImageSize } from "expo-camera";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import ImagePreview from "../../imagePreview";
 
 const Inspect = () => {
   const params = useLocalSearchParams();
   const url = Array.isArray(params.url) ? params.url[0] : params.url;
-  const [thisImageDetails, setThisImageDetails] = React.useState({});
-  const [displayDetails, setDisplayDetails] = React.useState(false);
-  const [imageScale, setImageScale] = React.useState(1);
+  const [imageScale, setImageScale] = useState<number>(1);
+  const [displayDetails, setDisplayDetails] = useState<boolean>(false);
+  const [thisImageDetails, setThisImageDetails] =
+    useState<ImageDetails>(imageDetails);
+  const [showCalendar, setShowCalendar] = useState<boolean>(false);
+  const [date, setDate] = useState<Date>();
+
+  const getImageRef = () => {
+    const encodedPath = encodeURIComponent(imageFolderPath);
+    const startIndex = url.indexOf(encodedPath) + encodedPath.length;
+    const endIndex = url.indexOf("?alt=media");
+    const imageId = url.substring(startIndex, endIndex);
+    const imageRef = ref(storage, imageFolderPath + imageId);
+
+    return imageRef;
+  };
 
   useEffect(() => {
     const fetchImageSize = async () => {
@@ -41,15 +65,19 @@ const Inspect = () => {
 
     const getImageMetadata = () => {
       try {
-        const encodedPath = encodeURIComponent(imageFolderPath);
-        const startIndex = url.indexOf(encodedPath) + encodedPath.length;
-        const endIndex = url.indexOf("?alt=media");
-        const imageId = url.substring(startIndex, endIndex);
-        const imageRef = ref(storage, imageFolderPath + imageId);
-
-        getMetadata(imageRef)
+        const ref = getImageRef();
+        getMetadata(ref)
           .then((metadata) => {
-            setThisImageDetails(metadata.customMetadata);
+            setThisImageDetails(
+              metadata.customMetadata as unknown as ImageDetails
+            );
+            const [day, month, year] = metadata.customMetadata.date.split("/");
+            const date = new Date(
+              parseInt(year),
+              parseInt(month) - 1,
+              parseInt(day)
+            );
+            setDate(new Date(date));
           })
           .catch((error) => {
             console.error("Error getting metadata: ", error);
@@ -63,23 +91,53 @@ const Inspect = () => {
     getImageMetadata();
   }, []);
 
+  const onDetailsTextChange = (key, value) => {
+    const updatedDetails: ImageDetails = { ...thisImageDetails };
+    updatedDetails[key] = value;
+    setThisImageDetails(updatedDetails);
+  };
+
+  const onDateChange = (event, selectedDate) => {
+    setShowCalendar(false);
+    setDate(selectedDate);
+    const updatedDetails: ImageDetails = { ...thisImageDetails };
+    updatedDetails["date"] = selectedDate.toLocaleDateString();
+    setThisImageDetails(updatedDetails);
+  };
+
+  const updateImageMetadata = () => {
+    if (!displayDetails) setDisplayDetails(true);
+    else if (url) {
+      const newMetadata = {
+        customMetadata: {
+          ...thisImageDetails,
+        },
+      };
+      const ref = getImageRef();
+
+      updateMetadata(ref, newMetadata)
+        .then((metadata) => {
+          Alert.alert("New Details saved.");
+          console.log("Metadata saved:", metadata.customMetadata);
+        })
+        .catch((error) => {
+          Alert.alert("Could not update details.");
+          console.error("Error updating image metadata: ", error);
+        });
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerTitle: "Inspect Page" }} />
       {!displayDetails ? (
-        <View style={styles.container}>
-          <ImageBackground
-            source={{ uri: url }}
-            style={{
-              // flex: 1,
-              width: screenWidth,
-              height: screenWidth * imageScale,
-            }}
-          />
-          {/* <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>
-        <Text style={styles.buttonText}>X</Text>
-      </TouchableOpacity> */}
-        </View>
+        <ImageBackground
+          source={{ uri: url }}
+          style={{
+            width: screenWidth,
+            height: screenWidth * imageScale,
+          }}
+        />
       ) : (
         <ScrollView>
           <TouchableOpacity
@@ -98,20 +156,45 @@ const Inspect = () => {
               }}
             />
           </TouchableOpacity>
-          {Object.keys(thisImageDetails) &&
-            Object.keys(thisImageDetails).map((key, i) => {
+          {keys &&
+            keys.map((key, i) => {
               return (
                 <View key={i} style={styles.detailsContainer}>
-                  <Text style={{ marginLeft: "10%" }}>
-                    {key}: {thisImageDetails[key]}
-                  </Text>
+                  <Text style={{ marginLeft: "10%" }}>{key}: </Text>
+                  {key !== "date" ? (
+                    <TextInput
+                      value={thisImageDetails[key]}
+                      onChangeText={(value) => onDetailsTextChange(key, value)}
+                      autoCapitalize="sentences"
+                      style={styles.input}
+                    />
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowCalendar(true);
+                      }}
+                      style={styles.input}
+                    >
+                      <Text style={{ color: "white" }}>
+                        {thisImageDetails["date"]}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               );
             })}
+          {showCalendar && (
+            <DateTimePicker
+              testID="dateTimePicker"
+              value={date}
+              mode={"date"}
+              onChange={onDateChange}
+            />
+          )}
         </ScrollView>
       )}
       <TouchableOpacity
-        onPress={() => setDisplayDetails(true)}
+        onPress={() => updateImageMetadata()}
         style={styles.saveButton}
       >
         <Text style={styles.buttonText}>
@@ -144,6 +227,16 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 20,
     color: "#fff",
+  },
+  input: {
+    marginVertical: 5,
+    width: (screenWidth * 66) / 200,
+    height: (screenHeight * 6.6) / 200,
+    backgroundColor: "black",
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    marginLeft: "10%",
+    color: "white",
   },
 });
 

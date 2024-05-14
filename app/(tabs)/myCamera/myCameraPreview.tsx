@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import { Stack } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -19,23 +20,23 @@ import {
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   imageFolderPath,
   screenWidth,
-  imageDetails,
+  keys,
   screenHeight,
+  ImageDetails,
+  imageDetails,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
 import ImagePreview from "../../imagePreview";
 
-const MyCameraPreview = ({ onExitPreview, image }) => {
-  const [displayDetails, setDisplayDetails] = React.useState(false);
-  const [date, setDate] = React.useState(new Date(Date.now()));
-  const [showCalendar, setShowCalendar] = React.useState(false);
-  const [thisImageDetails, setThisImageDetails] = React.useState(imageDetails);
-  const [imageScale, setImageScale] = React.useState(1);
-  const keys = Object.keys(imageDetails);
+const MyCameraPreview = ({ onExitPreview, imageUri }) => {
+  const [imageScale, setImageScale] = useState<number>(1);
+  const [displayDetails, setDisplayDetails] = useState<boolean>(false);
+  const [thisImageDetails, setThisImageDetails] =
+    useState<ImageDetails>(imageDetails);
+  const date: Date = new Date(Date.now());
 
   useEffect(() => {
     const fetchImageSize = async () => {
@@ -43,7 +44,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         const { width, height }: ImageSize = await new Promise(
           (resolve, reject) => {
             Image.getSize(
-              image.uri,
+              imageUri,
               (width, height) => resolve({ width, height }),
               reject
             );
@@ -62,36 +63,26 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     onExitPreview();
   };
 
-  const onDateChange = (event, selectedDate) => {
-    setShowCalendar(false);
-    setDate(selectedDate);
-  };
-
   const onDetailsTextChange = (key, value) => {
-    const updatedDetails = { ...thisImageDetails };
+    const updatedDetails: ImageDetails = { ...thisImageDetails };
     updatedDetails[key] = value;
     setThisImageDetails(updatedDetails);
   };
 
   const saveImage = () => {
     if (!displayDetails) setDisplayDetails(true);
-    else if (image) {
+    else if (imageUri) {
       const currentUserId = auth.currentUser?.uid;
       const userRef = doc(db, "users", currentUserId);
       // const imagesCollectionRef = collection(userRef, "images");
-      const imageName = image.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
-      let customMetadata = {};
+      const imageName = imageUri.match(/([^\/]+)(?=\.\w+$)/)[0];
+      thisImageDetails["date"] = date.toLocaleDateString();
 
-      Object.keys(thisImageDetails).forEach((key) => {
-        customMetadata[key] = thisImageDetails[key];
-        if (key === "date" && customMetadata[key] === "")
-          customMetadata[key] = date.toLocaleDateString();
-      });
       const metadata = {
-        customMetadata,
+        customMetadata: { ...thisImageDetails },
       };
 
-      uploadImage(image.uri, imageName, metadata)
+      uploadImage(imageUri, imageName, metadata)
         .then(async (downloadURL) => {
           Alert.alert("Image saved.");
           console.log("Image saved. URL:", downloadURL);
@@ -123,13 +114,14 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ headerTitle: "Preview Picture" }} />
       {!displayDetails ? (
         <ImageBackground
-          source={{ uri: image && image.uri }}
+          source={{ uri: imageUri }}
           style={{
-            // flex: 1,
             width: screenWidth,
             height: screenWidth * imageScale,
+            alignSelf: "flex-start",
           }}
         />
       ) : (
@@ -143,7 +135,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
             }}
           >
             <Image
-              source={{ uri: image && image.uri }}
+              source={{ uri: imageUri }}
               style={{
                 width: screenWidth / 2,
                 height: (screenWidth / 2) * imageScale,
@@ -157,39 +149,21 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
                   <Text style={{ marginLeft: "10%" }}>{key}: </Text>
                   {key !== "date" ? (
                     <TextInput
-                      // placeholder={key}
-                      placeholderTextColor={"white"}
                       value={thisImageDetails[key]}
                       onChangeText={(value) => onDetailsTextChange(key, value)}
-                      autoCapitalize="none"
+                      autoCapitalize="sentences"
                       style={styles.input}
                     />
                   ) : (
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowCalendar(true);
-                      }}
-                      style={styles.input}
-                    >
-                      <Text style={{ color: "white" }}>
-                        {date.toLocaleDateString()}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                  {showCalendar && (
-                    <DateTimePicker
-                      testID="dateTimePicker"
-                      value={date}
-                      mode={"date"}
-                      onChange={onDateChange}
-                    />
+                    <Text style={styles.input}>
+                      {date.toLocaleDateString()}
+                    </Text>
                   )}
                 </View>
               );
             })}
         </ScrollView>
       )}
-      {/* <ImagePreview image={image} onTouch={saveImage} /> */}
       <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>
         <Text style={styles.buttonText}>X</Text>
       </TouchableOpacity>
@@ -207,7 +181,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
-    backgroundColor: "transparent",
+    backgroundColor: "white",
     flexDirection: "row",
     position: "relative",
     justifyContent: "center",
