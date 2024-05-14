@@ -29,7 +29,9 @@ import {
   imageDetails,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
-import ImagePreview from "../../imagePreview";
+import { x } from "../../../assets/my_model/aaa";
+import * as tf from "@tensorflow/tfjs";
+import "@tensorflow/tfjs-react-native";
 
 const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   const [imageScale, setImageScale] = useState<number>(1);
@@ -55,7 +57,6 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
         console.error("Error getting image size:", error);
       }
     };
-
     fetchImageSize();
   }, []);
 
@@ -93,6 +94,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
           await updateDoc(userRef, {
             images: arrayUnion(downloadURL),
           });
+
           closeCameraPreview();
         })
         .catch((error) => {
@@ -103,11 +105,27 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   };
 
   const uploadImage = async (uri, name, metadata) => {
+    await tf.ready();
     const respone = await fetch(uri);
     const blob = await respone.blob();
     const imageRef = ref(storage, imageFolderPath + name);
     await uploadBytes(imageRef, blob, metadata);
     const downloadURL = await getDownloadURL(imageRef);
+
+    try {
+      const model = await tf.loadLayersModel(
+        "https://teachablemachine.withgoogle.com/models/8v8rZ9VJt/model.json"
+      );
+      const imageBitmap = await createImageBitmap(blob);
+      const imageTensor = await tf.browser.fromPixelsAsync(imageBitmap);
+      const normalizedImage = imageTensor.toFloat().div(255.0).expandDims(); // Normalize image
+      const predictions = await model.predict(normalizedImage);
+      const predictionData = await predictions[0].data();
+      console.log(predictions);
+      console.log(predictionData);
+    } catch (error) {
+      console.error("Error loading model: ", error);
+    }
 
     return downloadURL;
   };
