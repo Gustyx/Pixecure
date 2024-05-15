@@ -29,16 +29,26 @@ import {
   imageDetails,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
-import { x } from "../../../assets/my_model/aaa";
+import * as FileSystem from "expo-file-system";
 import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-react-native";
+import * as tmImage from "@teachablemachine/image";
+import * as im from "expo-image-manipulator";
+import {
+  fetch as tfFetch,
+  decodeJpeg,
+  bundleResourceIO,
+} from "@tensorflow/tfjs-react-native";
+import { x } from "../model/a";
 
 const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   const [imageScale, setImageScale] = useState<number>(1);
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
-  const [thisImageDetails, setThisImageDetails] =
-    useState<ImageDetails>(imageDetails);
   const date: Date = new Date(Date.now());
+  const [thisImageDetails, setThisImageDetails] = useState<ImageDetails>({
+    ...imageDetails,
+    date: date.toLocaleDateString(),
+  });
 
   useEffect(() => {
     const fetchImageSize = async () => {
@@ -77,7 +87,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
       const userRef = doc(db, "users", currentUserId);
       // const imagesCollectionRef = collection(userRef, "images");
       const imageName = imageUri.match(/([^\/]+)(?=\.\w+$)/)[0];
-      thisImageDetails["date"] = date.toLocaleDateString();
+      //thisImageDetails["date"] = date.toLocaleDateString();
 
       const metadata = {
         customMetadata: { ...thisImageDetails },
@@ -94,7 +104,6 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
           await updateDoc(userRef, {
             images: arrayUnion(downloadURL),
           });
-
           closeCameraPreview();
         })
         .catch((error) => {
@@ -113,20 +122,71 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
     const downloadURL = await getDownloadURL(imageRef);
 
     try {
-      const model = await tf.loadLayersModel(
-        "https://teachablemachine.withgoogle.com/models/8v8rZ9VJt/model.json"
+      const modelURL =
+        "https://teachablemachine.withgoogle.com/models/8v8rZ9VJt/";
+      const model = await tmImage.load(
+        modelURL + "model.json",
+        modelURL + "metadata.json"
       );
-      const imageBitmap = await createImageBitmap(blob);
-      const imageTensor = await tf.browser.fromPixelsAsync(imageBitmap);
-      const normalizedImage = imageTensor.toFloat().div(255.0).expandDims(); // Normalize image
-      const predictions = await model.predict(normalizedImage);
-      const predictionData = await predictions[0].data();
-      console.log(predictions);
-      console.log(predictionData);
+      // console.log(1);
+      // const modelJson = require("../../../assets/my_model/model.json");
+      // console.log(2, modelJson);
+      // const modelWeights = require("../../../assets/my_model/weights.bin");
+      // console.log(3, modelWeights);
+
+      // const model2 = await tf.loadLayersModel(
+      //   "https://teachablemachine.withgoogle.com/models/8v8rZ9VJt/model.json"
+      // );
+      // console.log(model2);
+      // let responsee = await tfFetch(downloadURL, {}, { isBinary: true });
+      // console.log(responsee);
+      // const processedImgBuffer = Buffer.from(imageData.base64, "base64");
+      // const imageTensor = decodeJpeg(imageData);
+      // const model = await tf.loadLayersModel(
+      //   "https://teachablemachine.withgoogle.com/models/8v8rZ9VJt/model.json"
+      // );
+      // const imgB64 = await FileSystem.readAsStringAsync(`${uri}`, {
+      //   encoding: FileSystem.EncodingType.Base64,
+      // });
+      // const processedImage = await im.manipulateAsync(
+      //   `data:image/jpeg;base64,${imgB64}`,
+      //   [{ resize: { width: 224, height: 224 } }],
+      //   { base64: true }
+      // );
+      // const processedImgBuffer = Buffer.from(processedImage.base64, "base64");
+      // console.log(processedImgBuffer["data"]);
+      // const imageTensor = decodeJpeg(processedImgBuffer);
+
+      // const prediction = (await model.predict(imageTensor))[0];
+      // console.log("a ", imageTensor);
+      // const resizedImageTensor = tf.image.resizeBilinear(
+      //   imageTensor,
+      //   [244, 244]
+      // );
+      // console.log("b ", resizedImageTensor);
+      // const batchedImageTensor = resizedImageTensor.reshape([1, 244, 244, 3]);
+      // console.log("c ", batchedImageTensor);
+      // const prediction = await model.predict({ ...processedImage, close });
+      // // const predictionData = await prediction[0].data();
+      // console.log(prediction);
+      // console.log(predictionData);
+
+      // console.log(model);
+      // const maxPredicitions = model.getTotalClasses();
+      // const predictionClasses = model.getClassLabels();
+
+      // console.log(predictionClasses);
+      // console.log(uri);
+      // const imgB64 = await FileSystem.readAsStringAsync(`${uri}`, {
+      //   encoding: FileSystem.EncodingType.Base64,
+      // });
+      // const imgBuffer = Buffer.from(imgB64, 'base64');
+      // const imageTensor = decodeJpeg(imgBuffer);
+      // const prediction = await model.predict();
+      // console.log(prediction);
     } catch (error) {
       console.error("Error loading model: ", error);
     }
-
     return downloadURL;
   };
 
