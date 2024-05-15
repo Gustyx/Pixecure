@@ -11,7 +11,7 @@ import {
   TextInput,
   ScrollView,
 } from "react-native";
-import { auth, db, storage } from "../../../firebase.config";
+import { auth, db, storage, imageFolderPath } from "../../../firebase.config";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
   addDoc,
@@ -21,7 +21,6 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import {
-  imageFolderPath,
   screenWidth,
   keys,
   screenHeight,

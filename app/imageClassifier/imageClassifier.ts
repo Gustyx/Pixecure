@@ -1,6 +1,5 @@
 import * as ImageManipulator from "expo-image-manipulator";
 import * as tf from "@tensorflow/tfjs";
-import "@tensorflow/tfjs-react-native";
 import { decodeJpeg } from "@tensorflow/tfjs-react-native";
 import { Base64Binary } from "../utils/utils";
 import { BITMAP_DIMENSION, TENSORFLOW_CHANNEL, screenWidth, screenHeight } from "../constants";

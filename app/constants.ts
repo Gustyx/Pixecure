@@ -9,7 +9,6 @@ export interface ImageDetails {
 }
 export const screenWidth: number = Dimensions.get("window").width;
 export const screenHeight: number = Dimensions.get("window").height;
-export const imageFolderPath: string = "images/";
 export const imageDetails: ImageDetails = {
   pose: "",
   kg: "",

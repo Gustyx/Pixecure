@@ -11,19 +11,17 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { storage } from "../../../firebase.config";
+import { storage, imageFolderPath } from "../../../firebase.config";
 import { ref, getMetadata, updateMetadata } from "firebase/storage";
 import {
   ImageDetails,
   keys,
-  imageFolderPath,
   screenHeight,
   screenWidth,
   imageDetails,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import ImagePreview from "../../imagePreview";
 
 const Inspect = () => {
   const params = useLocalSearchParams();

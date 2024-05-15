@@ -29,5 +29,6 @@ const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage)
 });
 const storage = getStorage(app);
+const imageFolderPath: string = "images/";
 
-export { app, db, auth, storage };
+export { app, db, auth, storage, imageFolderPath };
