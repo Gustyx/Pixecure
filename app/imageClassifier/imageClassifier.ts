@@ -4,16 +4,16 @@ import "@tensorflow/tfjs-react-native";
 import { decodeJpeg } from "@tensorflow/tfjs-react-native";
 import { Base64Binary } from "../utils/utils";
 import { BITMAP_DIMENSION, TENSORFLOW_CHANNEL, screenWidth, screenHeight } from "../constants";
+
 export const startPrediction = async (model, tensor) => {
     try {
-      // predict against the model
       const output = await model.predict(tensor);
-      // return typed array
       return output.dataSync();
     } catch (error) {
-      console.log("Error predicting from tesor image", error);
+      console.log("Error predicting from tensor image", error);
     }
   };
+
   export const convertBase64ToTensor = async (base64) => {
     try {
       const uIntArray = Base64Binary.decode(base64);
@@ -27,14 +27,13 @@ export const startPrediction = async (model, tensor) => {
         TENSORFLOW_CHANNEL,
       ]);
     } catch (error) {
-      console.log("Could not convert base64 string to tesor", error);
+      console.log("Could not convert base64 string to tensor", error);
     }
   };
+
   export const getModel = async () => {
     try {
-      // wait until tensorflow is ready
       await tf.ready();
-      // load the trained model
       return await tf.loadLayersModel(
         "https://teachablemachine.withgoogle.com/models/6ijRGvs7T/model.json"
       );
@@ -42,6 +41,7 @@ export const startPrediction = async (model, tensor) => {
       console.log("Could not load model", error);
     }
   };
+
   export const cropPicture = async (imageData, maskDimension) => {
     try {
       const { uri, width, height } = imageData;
