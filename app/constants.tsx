@@ -18,3 +18,9 @@ export const imageDetails: ImageDetails = {
   extra: "",
 };
 export const keys: string[] = Object.keys(imageDetails);
+export const date: Date = new Date(Date.now());
+
+// got the dimension from the trained data of the *Teachable Machine*; pixel resolution conversion (8x)
+export const BITMAP_DIMENSION = 224;
+export const TENSORFLOW_CHANNEL = 3;
+export const RESULT_MAPPING = ["Pull up", "Dip", "Push up"];
