@@ -14,16 +14,20 @@ import { Stack, useFocusEffect, useRouter } from "expo-router";
 import useAuth from "../../hooks/useAuth";
 import withAuthentication from "../../hocs/withAuthentication";
 import { arrayRemove, doc, getDoc, updateDoc } from "firebase/firestore";
-import { auth, db, storage } from "../../../firebase.config";
-import { deleteObject, ref } from "firebase/storage";
-import { imageFolderPath, months, screenWidth } from "../../constants";
+import { auth, db } from "../../../firebase.config";
+import { deleteObject } from "firebase/storage";
+import { getImageRef, months, screenWidth } from "../../constants";
 
 const HomePage = () => {
   const router = useRouter();
   const user = useAuth();
   const [categorizedImages, setCategorizedImages] = useState({});
+  const [imagesByPose, setImagesByPose] = useState({});
+  const [imagesByDate, setImagesByDate] = useState({});
   const [imageKeys, setImagesKeys] = useState([]);
-  const key = "pose";
+  const [poseKeys, setPoseKeys] = useState([]);
+  const [dateKeys, setDateKeys] = useState([]);
+  const [key, setKey] = useState("date");
 
   useFocusEffect(
     React.useCallback(() => {
@@ -37,12 +41,10 @@ const HomePage = () => {
             for (const image of data) {
               const date = image.date;
               const pose = image.pose;
-
               if (!categorizedImagesByPose[pose]) {
                 categorizedImagesByPose[pose] = [];
               }
               categorizedImagesByPose[pose].push(image);
-
               if (!categorizedImagesByDate[date]) {
                 categorizedImagesByDate[date] = [];
               }
@@ -61,12 +63,16 @@ const HomePage = () => {
               }
               return 0;
             });
-            if (key === "pose") {
-              setCategorizedImages(categorizedImagesByPose);
-              setImagesKeys(poseKeys);
-            } else if (key === "date") {
+            setImagesByPose(categorizedImagesByPose);
+            setImagesByDate(categorizedImagesByDate);
+            setPoseKeys(poseKeys);
+            setDateKeys(dateKeys);
+            if (key === "date") {
               setCategorizedImages(categorizedImagesByDate);
               setImagesKeys(dateKeys);
+            } else if (key === "pose") {
+              setCategorizedImages(categorizedImagesByPose);
+              setImagesKeys(poseKeys);
             }
           } else {
             console.log("No such document!");
@@ -77,6 +83,7 @@ const HomePage = () => {
       };
 
       getImages();
+      console.log("A");
     }, [])
   );
 
@@ -86,11 +93,7 @@ const HomePage = () => {
   };
 
   const deleteImage = async (item) => {
-    const startIndex = item.url.indexOf("%2F") + 3;
-    const endIndex = item.url.indexOf("?alt=media");
-    const imageId = item.url.substring(startIndex, endIndex);
-    const imageRef = ref(storage, imageFolderPath + imageId);
-
+    const imageRef = getImageRef(item.url);
     deleteObject(imageRef)
       .then(() => {
         Alert.alert("Image deleted.");
@@ -162,6 +165,27 @@ const HomePage = () => {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => {
+                if (key === "pose") {
+                  setKey("date");
+                  setCategorizedImages(imagesByDate);
+                  setImagesKeys(dateKeys);
+                } else {
+                  setKey("pose");
+                  setCategorizedImages(imagesByPose);
+                  setImagesKeys(poseKeys);
+                }
+              }}
+            >
+              <Text>Sort</Text>
+            </TouchableOpacity>
+          ),
+        }}
+      />
       {imageKeys.length > 0 ? (
         <FlatList
           data={imageKeys}
@@ -183,7 +207,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
-    flexDirection: "row",
+    flexDirection: "column",
     flexWrap: "wrap",
     justifyContent: "flex-start",
   },

@@ -1,4 +1,6 @@
+import { ref } from "firebase/storage";
 import { Dimensions } from "react-native";
+import { storage } from "../firebase.config";
 
 export interface ImageDetails {
   pose: string;
@@ -32,3 +34,19 @@ export const months = [
   "November",
   "December",
 ];
+export const formatDate = (date) => {
+  const splitDate = date.split("/");
+  const month = months[parseInt(splitDate[1]) - 1];
+  const year = splitDate[2];
+  const formattedDate = `${year} - ${month}`;
+  return formattedDate;
+};
+export const getImageRef = (imageUrl) => {
+  const encodedPath = encodeURIComponent(imageFolderPath);
+  const startIndex = imageUrl.indexOf(encodedPath) + encodedPath.length;
+  const endIndex = imageUrl.indexOf("?alt=media");
+  const imageId = imageUrl.substring(startIndex, endIndex);
+  const imageRef = ref(storage, imageFolderPath + imageId);
+
+  return imageRef;
+};

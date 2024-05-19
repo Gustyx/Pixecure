@@ -11,16 +11,16 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { auth, db, storage } from "../../../firebase.config";
-import { ref, getMetadata, updateMetadata } from "firebase/storage";
+import { auth, db } from "../../../firebase.config";
+import { getMetadata, updateMetadata } from "firebase/storage";
 import {
   ImageDetails,
   keys,
-  imageFolderPath,
   screenHeight,
   screenWidth,
   imageDetails,
-  months,
+  formatDate,
+  getImageRef,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -34,19 +34,9 @@ const Inspect = () => {
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
-  const [date, setDate] = useState<Date>();
+  const [selectedDate, setSelectedDate] = useState<Date>();
   const [oldPose, setOldPose] = useState("");
   const [oldDate, setOldDate] = useState("");
-
-  const getImageRef = () => {
-    const encodedPath = encodeURIComponent(imageFolderPath);
-    const startIndex = url.indexOf(encodedPath) + encodedPath.length;
-    const endIndex = url.indexOf("?alt=media");
-    const imageId = url.substring(startIndex, endIndex);
-    const imageRef = ref(storage, imageFolderPath + imageId);
-
-    return imageRef;
-  };
 
   useEffect(() => {
     const fetchImageSize = async () => {
@@ -68,7 +58,7 @@ const Inspect = () => {
 
     const getImageMetadata = () => {
       try {
-        const ref = getImageRef();
+        const ref = getImageRef(url);
         getMetadata(ref)
           .then((metadata) => {
             setThisImageDetails(
@@ -80,13 +70,9 @@ const Inspect = () => {
               parseInt(month) - 1,
               parseInt(day)
             );
-            setDate(new Date(date));
+            setSelectedDate(new Date(date));
             setOldPose(metadata.customMetadata.pose);
-            const splitDate = metadata.customMetadata.date.split("/");
-            const month1 = months[parseInt(splitDate[1]) - 1];
-            const year1 = splitDate[2];
-            const monthYearKey = `${year1} - ${month1}`;
-            setOldDate(monthYearKey);
+            setOldDate(formatDate(metadata.customMetadata.date));
           })
           .catch((error) => {
             console.error("Error getting metadata: ", error);
@@ -108,7 +94,7 @@ const Inspect = () => {
 
   const onDateChange = (event, selectedDate) => {
     setShowCalendar(false);
-    setDate(selectedDate);
+    setSelectedDate(selectedDate);
     const updatedDetails: ImageDetails = { ...thisImageDetails };
     updatedDetails["date"] = selectedDate.toLocaleDateString();
     setThisImageDetails(updatedDetails);
@@ -122,25 +108,22 @@ const Inspect = () => {
           ...thisImageDetails,
         },
       };
-      const ref = getImageRef();
       const currentUserId = auth.currentUser?.uid;
       const userRef = doc(db, "users", currentUserId);
-      const splitDate = thisImageDetails["date"].split("/");
-      const month = months[parseInt(splitDate[1]) - 1];
-      const year = splitDate[2];
-      const monthYearKey = `${year} - ${month}`;
-
-      await updateDoc(userRef, {
-        images: arrayRemove({ url: url, pose: oldPose, date: oldDate }),
-      });
-      await updateDoc(userRef, {
-        images: arrayUnion({
-          url: url,
-          pose: thisImageDetails.pose,
-          date: monthYearKey,
-        }),
-      });
-      updateMetadata(ref, newMetadata)
+      const date = formatDate(thisImageDetails["date"]);
+      if (thisImageDetails.pose !== oldPose || date !== oldDate) {
+        await updateDoc(userRef, {
+          images: arrayRemove({ url: url, pose: oldPose, date: oldDate }),
+        });
+        await updateDoc(userRef, {
+          images: arrayUnion({
+            url: url,
+            pose: thisImageDetails.pose,
+            date: date,
+          }),
+        });
+      }
+      updateMetadata(getImageRef(url), newMetadata)
         .then((metadata) => {
           Alert.alert("New Details saved.");
           console.log("Metadata saved:", metadata.customMetadata);
@@ -211,7 +194,7 @@ const Inspect = () => {
           {showCalendar && (
             <DateTimePicker
               testID="dateTimePicker"
-              value={date}
+              value={selectedDate}
               mode={"date"}
               onChange={onDateChange}
             />
