@@ -11,7 +11,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { storage } from "../../../firebase.config";
+import { auth, db, storage } from "../../../firebase.config";
 import { ref, getMetadata, updateMetadata } from "firebase/storage";
 import {
   ImageDetails,
@@ -20,10 +20,11 @@ import {
   screenHeight,
   screenWidth,
   imageDetails,
+  months,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import ImagePreview from "../../imagePreview";
+import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 
 const Inspect = () => {
   const params = useLocalSearchParams();
@@ -34,6 +35,8 @@ const Inspect = () => {
     useState<ImageDetails>(imageDetails);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const [date, setDate] = useState<Date>();
+  const [oldPose, setOldPose] = useState("");
+  const [oldDate, setOldDate] = useState("");
 
   const getImageRef = () => {
     const encodedPath = encodeURIComponent(imageFolderPath);
@@ -78,6 +81,12 @@ const Inspect = () => {
               parseInt(day)
             );
             setDate(new Date(date));
+            setOldPose(metadata.customMetadata.pose);
+            const splitDate = metadata.customMetadata.date.split("/");
+            const month1 = months[parseInt(splitDate[1]) - 1];
+            const year1 = splitDate[2];
+            const monthYearKey = `${year1} - ${month1}`;
+            setOldDate(monthYearKey);
           })
           .catch((error) => {
             console.error("Error getting metadata: ", error);
@@ -105,7 +114,7 @@ const Inspect = () => {
     setThisImageDetails(updatedDetails);
   };
 
-  const updateImageMetadata = () => {
+  const updateImageMetadata = async () => {
     if (!displayDetails) setDisplayDetails(true);
     else if (url) {
       const newMetadata = {
@@ -114,7 +123,23 @@ const Inspect = () => {
         },
       };
       const ref = getImageRef();
+      const currentUserId = auth.currentUser?.uid;
+      const userRef = doc(db, "users", currentUserId);
+      const splitDate = thisImageDetails["date"].split("/");
+      const month = months[parseInt(splitDate[1]) - 1];
+      const year = splitDate[2];
+      const monthYearKey = `${year} - ${month}`;
 
+      await updateDoc(userRef, {
+        images: arrayRemove({ url: url, pose: oldPose, date: oldDate }),
+      });
+      await updateDoc(userRef, {
+        images: arrayUnion({
+          url: url,
+          pose: thisImageDetails.pose,
+          date: monthYearKey,
+        }),
+      });
       updateMetadata(ref, newMetadata)
         .then((metadata) => {
           Alert.alert("New Details saved.");

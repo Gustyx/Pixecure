@@ -27,9 +27,9 @@ import {
   screenHeight,
   ImageDetails,
   imageDetails,
+  months,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
-import ImagePreview from "../../imagePreview";
 
 const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   const [imageScale, setImageScale] = useState<number>(1);
@@ -90,8 +90,17 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
           //   url: downloadURL,
           //   name: imageName,
           // });
+          const splitDate = thisImageDetails["date"].split("/");
+          const month = months[parseInt(splitDate[1]) - 1];
+          const year = splitDate[2];
+          const monthYearKey = `${year} - ${month}`;
+
           await updateDoc(userRef, {
-            images: arrayUnion(downloadURL),
+            images: arrayUnion({
+              url: downloadURL,
+              pose: thisImageDetails.pose,
+              date: monthYearKey,
+            }),
           });
           closeCameraPreview();
         })
