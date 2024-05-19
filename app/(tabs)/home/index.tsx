@@ -22,11 +22,11 @@ const HomePage = () => {
   const router = useRouter();
   const user = useAuth();
   const [categorizedImages, setCategorizedImages] = useState({});
-  const [imagesByPose, setImagesByPose] = useState({});
-  const [imagesByDate, setImagesByDate] = useState({});
+  // const [imagesByPose, setImagesByPose] = useState({});
+  // const [imagesByDate, setImagesByDate] = useState({});
   const [imageKeys, setImagesKeys] = useState([]);
-  const [poseKeys, setPoseKeys] = useState([]);
-  const [dateKeys, setDateKeys] = useState([]);
+  // const [poseKeys, setPoseKeys] = useState([]);
+  // const [dateKeys, setDateKeys] = useState([]);
   const [key, setKey] = useState("date");
 
   useFocusEffect(
@@ -63,10 +63,10 @@ const HomePage = () => {
               }
               return 0;
             });
-            setImagesByPose(categorizedImagesByPose);
-            setImagesByDate(categorizedImagesByDate);
-            setPoseKeys(poseKeys);
-            setDateKeys(dateKeys);
+            // setImagesByPose(categorizedImagesByPose);
+            // setImagesByDate(categorizedImagesByDate);
+            // setPoseKeys(poseKeys);
+            // setDateKeys(dateKeys);
             if (key === "date") {
               setCategorizedImages(categorizedImagesByDate);
               setImagesKeys(dateKeys);
@@ -83,8 +83,7 @@ const HomePage = () => {
       };
 
       getImages();
-      console.log("A");
-    }, [])
+    }, [key])
   );
 
   const inspectImage = (item) => {
@@ -172,12 +171,12 @@ const HomePage = () => {
               onPress={() => {
                 if (key === "pose") {
                   setKey("date");
-                  setCategorizedImages(imagesByDate);
-                  setImagesKeys(dateKeys);
+                  // setCategorizedImages(imagesByDate);
+                  // setImagesKeys(dateKeys);
                 } else {
                   setKey("pose");
-                  setCategorizedImages(imagesByPose);
-                  setImagesKeys(poseKeys);
+                  // setCategorizedImages(imagesByPose);
+                  // setImagesKeys(poseKeys);
                 }
               }}
             >
