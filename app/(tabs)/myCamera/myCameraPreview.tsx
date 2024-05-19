@@ -83,11 +83,9 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       const userRef = doc(db, "users", currentUserId);
       // const imagesCollectionRef = collection(userRef, "images");
       const imageName = image.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
-
       const metadata = {
         customMetadata: { ...thisImageDetails },
       };
-
       uploadImage(image.uri, imageName, metadata)
         .then(async (downloadURL) => {
           Alert.alert("Image saved.");
