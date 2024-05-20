@@ -23,19 +23,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomePage = () => {
   const [categorizedImages, setCategorizedImages] = useState({});
+  const [key, setKey] = useState("Date");
   const [imagesByPose, setImagesByPose] = useState({});
   const [imagesByDate, setImagesByDate] = useState({});
   const [imageKeys, setImageKeys] = useState([]);
   const [poseKeys, setPoseKeys] = useState([]);
   const [dateKeys, setDateKeys] = useState([]);
-  const [key, setKey] = useState("Date");
-  const [visible, setVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [loading, setLoading] = useState(true); // Add loading state
   const router = useRouter();
   const user = useAuth();
   const navigation = useNavigation();
 
-  const openMenu = () => setVisible(true);
-  const closeMenu = () => setVisible(false);
+  const openMenu = () => setMenuVisible(true);
+  const closeMenu = () => setMenuVisible(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -49,8 +50,8 @@ const HomePage = () => {
             let categorizedImagesByDate = {};
             const data = docSnap.data().images;
             for (const image of data) {
-              const date = image.date;
               const pose = image.pose;
+              const date = image.date;
               if (!categorizedImagesByPose[pose]) {
                 categorizedImagesByPose[pose] = [];
               }
@@ -89,6 +90,8 @@ const HomePage = () => {
           }
         } catch (error) {
           console.error("Error getting document:", error);
+        } finally {
+          setLoading(false);
         }
       };
 
@@ -120,8 +123,8 @@ const HomePage = () => {
       }),
     });
 
-    let newImagesByPose = { ...imagesByPose };
     const poseIsKey = categorizedImages[image.pose];
+    let newImagesByPose = { ...imagesByPose };
     newImagesByPose[image.pose] = newImagesByPose[image.pose].filter(
       (item) =>
         !(
@@ -160,6 +163,23 @@ const HomePage = () => {
     }
   };
 
+  const handleSortChange = async (newKey) => {
+    try {
+      await AsyncStorage.setItem("sortingKey", newKey);
+      setKey(newKey);
+      if (newKey === "Pose") {
+        setImageKeys(poseKeys);
+        setCategorizedImages(imagesByPose);
+      } else {
+        setImageKeys(dateKeys);
+        setCategorizedImages(imagesByDate);
+      }
+    } catch (error) {
+      console.error("Failed to save sorting key:", error);
+    }
+    closeMenu();
+  };
+
   const renderImage = useCallback(
     ({ item, index }) => (
       <TouchableOpacity
@@ -183,33 +203,20 @@ const HomePage = () => {
           renderItem={renderImage}
           keyExtractor={(item, index) => `${item}-${index}`}
           numColumns={5}
+          style={{
+            flex: 1,
+          }}
         />
       </View>
     ),
     [categorizedImages]
   );
-  const handleSortChange = async (newKey) => {
-    try {
-      await AsyncStorage.setItem("sortingKey", newKey);
-      setKey(newKey);
-      if (newKey === "Pose") {
-        setImageKeys(poseKeys);
-        setCategorizedImages(imagesByPose);
-      } else {
-        setImageKeys(dateKeys);
-        setCategorizedImages(imagesByDate);
-      }
-    } catch (error) {
-      console.error("Failed to save sorting key:", error);
-    }
-    closeMenu();
-  };
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <Menu
-          visible={visible}
+          visible={menuVisible}
           anchor={
             <TouchableOpacity onPress={openMenu}>
               <Text>Sorted by: {key}</Text>
@@ -220,10 +227,6 @@ const HomePage = () => {
           <MenuItem
             onPress={() => {
               handleSortChange("Date");
-              // setKey("Date");
-              // setImageKeys(dateKeys);
-              // setCategorizedImages(imagesByDate);
-              // closeMenu();
             }}
           >
             Date
@@ -231,10 +234,6 @@ const HomePage = () => {
           <MenuItem
             onPress={() => {
               handleSortChange("Pose");
-              // setKey("Pose");
-              // setImageKeys(poseKeys);
-              // setCategorizedImages(imagesByPose);
-              // closeMenu();
             }}
           >
             Pose
@@ -242,7 +241,15 @@ const HomePage = () => {
         </Menu>
       ),
     });
-  }, [navigation, visible]);
+  }, [navigation, menuVisible]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -251,6 +258,7 @@ const HomePage = () => {
           data={imageKeys}
           renderItem={renderCategory}
           keyExtractor={(item) => item}
+          style={{ width: "100%" }}
         />
       ) : (
         <View style={styles.noImages}>
