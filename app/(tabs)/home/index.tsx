@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -19,14 +19,15 @@ import { deleteObject } from "firebase/storage";
 import { getImageRef, months, screenWidth } from "../../constants";
 import { Menu, MenuItem } from "react-native-material-menu";
 import { useNavigation } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomePage = () => {
   const [categorizedImages, setCategorizedImages] = useState({});
-  // const [imagesByPose, setImagesByPose] = useState({});
-  // const [imagesByDate, setImagesByDate] = useState({});
-  const [imageKeys, setImagesKeys] = useState([]);
-  // const [poseKeys, setPoseKeys] = useState([]);
-  // const [dateKeys, setDateKeys] = useState([]);
+  const [imagesByPose, setImagesByPose] = useState({});
+  const [imagesByDate, setImagesByDate] = useState({});
+  const [imageKeys, setImageKeys] = useState([]);
+  const [poseKeys, setPoseKeys] = useState([]);
+  const [dateKeys, setDateKeys] = useState([]);
   const [key, setKey] = useState("Date");
   const [visible, setVisible] = useState(false);
   const router = useRouter();
@@ -39,6 +40,8 @@ const HomePage = () => {
   useFocusEffect(
     React.useCallback(() => {
       const getImages = async () => {
+        const savedKey = await AsyncStorage.getItem("sortingKey");
+        setKey(savedKey);
         try {
           const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
           if (docSnap.exists()) {
@@ -70,16 +73,16 @@ const HomePage = () => {
               }
               return 0;
             });
-            // setImagesByPose(categorizedImagesByPose);
-            // setImagesByDate(categorizedImagesByDate);
-            // setPoseKeys(poseKeys);
-            // setDateKeys(dateKeys);
-            if (key === "Date") {
-              setCategorizedImages(categorizedImagesByDate);
-              setImagesKeys(dateKeys);
-            } else if (key === "Pose") {
+            setImagesByPose(categorizedImagesByPose);
+            setImagesByDate(categorizedImagesByDate);
+            setPoseKeys(poseKeys);
+            setDateKeys(dateKeys);
+            if (savedKey === "Pose") {
               setCategorizedImages(categorizedImagesByPose);
-              setImagesKeys(poseKeys);
+              setImageKeys(poseKeys);
+            } else {
+              setCategorizedImages(categorizedImagesByDate);
+              setImageKeys(dateKeys);
             }
           } else {
             console.log("No such document!");
@@ -90,16 +93,16 @@ const HomePage = () => {
       };
 
       getImages();
-    }, [key])
+    }, [])
   );
 
-  const inspectImage = (item) => {
-    const imageUrl = encodeURIComponent(item.url);
+  const inspectImage = (image) => {
+    const imageUrl = encodeURIComponent(image.url);
     router.push({ pathname: `/home/${imageUrl}` });
   };
 
-  const deleteImage = async (item) => {
-    const imageRef = getImageRef(item.url);
+  const deleteImage = async (image) => {
+    const imageRef = getImageRef(image.url);
     deleteObject(imageRef)
       .then(() => {
         Alert.alert("Image deleted.");
@@ -110,34 +113,51 @@ const HomePage = () => {
     const currentUserId = auth.currentUser?.uid;
     const userRef = doc(db, "users", currentUserId);
     await updateDoc(userRef, {
-      images: arrayRemove({ url: item.url, pose: item.pose, date: item.date }),
+      images: arrayRemove({
+        url: image.url,
+        pose: image.pose,
+        date: image.date,
+      }),
     });
 
-    let newImages = { ...categorizedImages };
-    const itemToRemove = {
-      url: item.url,
-      pose: item.pose,
-      date: item.date,
-    };
-    const poseIsKey = newImages[item.pose];
-
-    newImages[poseIsKey ? item.pose : item.date] = newImages[
-      poseIsKey ? item.pose : item.date
-    ].filter(
+    let newImagesByPose = { ...imagesByPose };
+    const poseIsKey = categorizedImages[image.pose];
+    newImagesByPose[image.pose] = newImagesByPose[image.pose].filter(
       (item) =>
         !(
-          item.url === itemToRemove.url &&
-          item.pose === itemToRemove.pose &&
-          item.date === itemToRemove.date
+          item.url === image.url &&
+          item.pose === image.pose &&
+          item.date === image.date
         )
     );
-    if (newImages[poseIsKey ? item.pose : item.date].length === 0) {
-      const removeKey = imageKeys.filter((item) =>
-        poseIsKey ? item !== itemToRemove.pose : item !== itemToRemove.date
-      );
-      setImagesKeys(removeKey);
+    let newImagesByDate = { ...imagesByDate };
+    newImagesByDate[image.date] = newImagesByDate[image.date].filter(
+      (item) =>
+        !(
+          item.url === image.url &&
+          item.pose === image.pose &&
+          item.date === image.date
+        )
+    );
+
+    if (newImagesByPose[image.pose].length === 0) {
+      const removePoseKey = poseKeys.filter((item) => item !== image.pose);
+      setPoseKeys(removePoseKey);
+      setImageKeys(removePoseKey);
     }
-    setCategorizedImages(newImages);
+    if (newImagesByDate[image.date].length === 0) {
+      const removeDateKey = dateKeys.filter((item) => item !== image.date);
+      setDateKeys(removeDateKey);
+      setImageKeys(removeDateKey);
+    }
+    setImagesByPose(newImagesByPose);
+    setImagesByDate(newImagesByDate);
+
+    if (poseIsKey) {
+      setCategorizedImages(newImagesByPose);
+    } else {
+      setCategorizedImages(newImagesByDate);
+    }
   };
 
   const renderImage = useCallback(
@@ -168,6 +188,22 @@ const HomePage = () => {
     ),
     [categorizedImages]
   );
+  const handleSortChange = async (newKey) => {
+    try {
+      await AsyncStorage.setItem("sortingKey", newKey);
+      setKey(newKey);
+      if (newKey === "Pose") {
+        setImageKeys(poseKeys);
+        setCategorizedImages(imagesByPose);
+      } else {
+        setImageKeys(dateKeys);
+        setCategorizedImages(imagesByDate);
+      }
+    } catch (error) {
+      console.error("Failed to save sorting key:", error);
+    }
+    closeMenu();
+  };
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
@@ -183,16 +219,22 @@ const HomePage = () => {
         >
           <MenuItem
             onPress={() => {
-              setKey("Date");
-              closeMenu();
+              handleSortChange("Date");
+              // setKey("Date");
+              // setImageKeys(dateKeys);
+              // setCategorizedImages(imagesByDate);
+              // closeMenu();
             }}
           >
             Date
           </MenuItem>
           <MenuItem
             onPress={() => {
-              setKey("Pose");
-              closeMenu();
+              handleSortChange("Pose");
+              // setKey("Pose");
+              // setImageKeys(poseKeys);
+              // setCategorizedImages(imagesByPose);
+              // closeMenu();
             }}
           >
             Pose

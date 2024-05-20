@@ -97,6 +97,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
               date: date,
             }),
           });
+
           closeCameraPreview();
         })
         .catch((error) => {
