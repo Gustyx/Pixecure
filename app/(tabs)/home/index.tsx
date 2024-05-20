@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -17,17 +17,24 @@ import { arrayRemove, doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../../../firebase.config";
 import { deleteObject } from "firebase/storage";
 import { getImageRef, months, screenWidth } from "../../constants";
+import { Menu, MenuItem } from "react-native-material-menu";
+import { useNavigation } from "expo-router";
 
 const HomePage = () => {
-  const router = useRouter();
-  const user = useAuth();
   const [categorizedImages, setCategorizedImages] = useState({});
   // const [imagesByPose, setImagesByPose] = useState({});
   // const [imagesByDate, setImagesByDate] = useState({});
   const [imageKeys, setImagesKeys] = useState([]);
   // const [poseKeys, setPoseKeys] = useState([]);
   // const [dateKeys, setDateKeys] = useState([]);
-  const [key, setKey] = useState("date");
+  const [key, setKey] = useState("Date");
+  const [visible, setVisible] = useState(false);
+  const router = useRouter();
+  const user = useAuth();
+  const navigation = useNavigation();
+
+  const openMenu = () => setVisible(true);
+  const closeMenu = () => setVisible(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -67,10 +74,10 @@ const HomePage = () => {
             // setImagesByDate(categorizedImagesByDate);
             // setPoseKeys(poseKeys);
             // setDateKeys(dateKeys);
-            if (key === "date") {
+            if (key === "Date") {
               setCategorizedImages(categorizedImagesByDate);
               setImagesKeys(dateKeys);
-            } else if (key === "pose") {
+            } else if (key === "Pose") {
               setCategorizedImages(categorizedImagesByPose);
               setImagesKeys(poseKeys);
             }
@@ -162,29 +169,41 @@ const HomePage = () => {
     [categorizedImages]
   );
 
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Menu
+          visible={visible}
+          anchor={
+            <TouchableOpacity onPress={openMenu}>
+              <Text>Sorted by: {key}</Text>
+            </TouchableOpacity>
+          }
+          onRequestClose={closeMenu}
+        >
+          <MenuItem
+            onPress={() => {
+              setKey("Date");
+              closeMenu();
+            }}
+          >
+            Date
+          </MenuItem>
+          <MenuItem
+            onPress={() => {
+              setKey("Pose");
+              closeMenu();
+            }}
+          >
+            Pose
+          </MenuItem>
+        </Menu>
+      ),
+    });
+  }, [navigation, visible]);
+
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => {
-                if (key === "pose") {
-                  setKey("date");
-                  // setCategorizedImages(imagesByDate);
-                  // setImagesKeys(dateKeys);
-                } else {
-                  setKey("pose");
-                  // setCategorizedImages(imagesByPose);
-                  // setImagesKeys(poseKeys);
-                }
-              }}
-            >
-              <Text>Sort</Text>
-            </TouchableOpacity>
-          ),
-        }}
-      />
       {imageKeys.length > 0 ? (
         <FlatList
           data={imageKeys}
