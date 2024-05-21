@@ -38,7 +38,7 @@ export const formatDate = (date) => {
   const splitDate = date.split("/");
   const month = months[parseInt(splitDate[1]) - 1];
   const year = splitDate[2];
-  const formattedDate = `${year} - ${month}`;
+  const formattedDate = `${month} - ${year}`;
   return formattedDate;
 };
 export const getImageRef = (imageUrl) => {
@@ -47,6 +47,5 @@ export const getImageRef = (imageUrl) => {
   const endIndex = imageUrl.indexOf("?alt=media");
   const imageId = imageUrl.substring(startIndex, endIndex);
   const imageRef = ref(storage, imageFolderPath + imageId);
-
   return imageRef;
 };

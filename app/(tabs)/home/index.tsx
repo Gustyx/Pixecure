@@ -42,9 +42,6 @@ const HomePage = () => {
   const user = useAuth();
   const navigation = useNavigation();
 
-  const openMenu = () => setMenuVisible(true);
-  const closeMenu = () => setMenuVisible(false);
-
   useFocusEffect(
     React.useCallback(() => {
       const getImages = async () => {
@@ -69,8 +66,8 @@ const HomePage = () => {
             const poseKeys = Object.keys(categorizedImagesByPose);
             const dateKeys = Object.keys(categorizedImagesByDate);
             dateKeys.sort((keyA, keyB) => {
-              const [yearA, monthA] = keyA.split(" - ");
-              const [yearB, monthB] = keyB.split(" - ");
+              const [monthA, yearA] = keyA.split(" - ");
+              const [monthB, yearB] = keyB.split(" - ");
               if (yearA !== yearB) {
                 return parseInt(yearA) > parseInt(yearB) ? -1 : 1;
               }
@@ -103,6 +100,9 @@ const HomePage = () => {
       getImages();
     }, [])
   );
+
+  const openMenu = () => setMenuVisible(true);
+  const closeMenu = () => setMenuVisible(false);
 
   const inspectImage = (image) => {
     const imageUrl = encodeURIComponent(image.url);
@@ -171,7 +171,6 @@ const HomePage = () => {
   const handleSortChange = async (newKey) => {
     try {
       await AsyncStorage.setItem("sortingKey", newKey);
-      // setKey(newKey);
       key = newKey;
       if (newKey === "Pose") {
         setImageKeys(poseKeys);
