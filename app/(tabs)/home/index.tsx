@@ -21,16 +21,23 @@ import { Menu, MenuItem } from "react-native-material-menu";
 import { useNavigation } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+let key;
+AsyncStorage.getItem("sortingKey").then((value) => {
+  if (value) {
+    key = value;
+  } else {
+    key = "Date";
+  }
+});
 const HomePage = () => {
   const [categorizedImages, setCategorizedImages] = useState({});
-  const [key, setKey] = useState("Date");
   const [imagesByPose, setImagesByPose] = useState({});
   const [imagesByDate, setImagesByDate] = useState({});
   const [imageKeys, setImageKeys] = useState([]);
   const [poseKeys, setPoseKeys] = useState([]);
   const [dateKeys, setDateKeys] = useState([]);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const user = useAuth();
   const navigation = useNavigation();
@@ -41,8 +48,6 @@ const HomePage = () => {
   useFocusEffect(
     React.useCallback(() => {
       const getImages = async () => {
-        const savedKey = await AsyncStorage.getItem("sortingKey");
-        setKey(savedKey);
         try {
           const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
           if (docSnap.exists()) {
@@ -78,7 +83,7 @@ const HomePage = () => {
             setImagesByDate(categorizedImagesByDate);
             setPoseKeys(poseKeys);
             setDateKeys(dateKeys);
-            if (savedKey === "Pose") {
+            if (key === "Pose") {
               setCategorizedImages(categorizedImagesByPose);
               setImageKeys(poseKeys);
             } else {
@@ -166,7 +171,8 @@ const HomePage = () => {
   const handleSortChange = async (newKey) => {
     try {
       await AsyncStorage.setItem("sortingKey", newKey);
-      setKey(newKey);
+      // setKey(newKey);
+      key = newKey;
       if (newKey === "Pose") {
         setImageKeys(poseKeys);
         setCategorizedImages(imagesByPose);
