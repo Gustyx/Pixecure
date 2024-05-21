@@ -27,9 +27,9 @@ import {
   screenHeight,
   ImageDetails,
   imageDetails,
+  formatDate,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
-import ImagePreview from "../../imagePreview";
 
 const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   const [imageScale, setImageScale] = useState<number>(1);
@@ -75,14 +75,12 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
       const currentUserId = auth.currentUser?.uid;
       const userRef = doc(db, "users", currentUserId);
       // const imagesCollectionRef = collection(userRef, "images");
-      const imageName = imageUri.match(/([^\/]+)(?=\.\w+$)/)[0];
       thisImageDetails["date"] = date.toLocaleDateString();
-
       const metadata = {
         customMetadata: { ...thisImageDetails },
       };
 
-      uploadImage(imageUri, imageName, metadata)
+      uploadImage(imageUri, metadata)
         .then(async (downloadURL) => {
           Alert.alert("Image saved.");
           console.log("Image saved. URL:", downloadURL);
@@ -90,9 +88,16 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
           //   url: downloadURL,
           //   name: imageName,
           // });
+          const date = formatDate(thisImageDetails["date"]);
+
           await updateDoc(userRef, {
-            images: arrayUnion(downloadURL),
+            images: arrayUnion({
+              url: downloadURL,
+              pose: thisImageDetails.pose,
+              date: date,
+            }),
           });
+
           closeCameraPreview();
         })
         .catch((error) => {
@@ -102,10 +107,11 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
     }
   };
 
-  const uploadImage = async (uri, name, metadata) => {
+  const uploadImage = async (uri, metadata) => {
+    const imageName = uri.match(/([^\/]+)(?=\.\w+$)/)[0];
     const respone = await fetch(uri);
     const blob = await respone.blob();
-    const imageRef = ref(storage, imageFolderPath + name);
+    const imageRef = ref(storage, imageFolderPath + imageName);
     await uploadBytes(imageRef, blob, metadata);
     const downloadURL = await getDownloadURL(imageRef);
 

@@ -11,19 +11,20 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { storage } from "../../../firebase.config";
-import { ref, getMetadata, updateMetadata } from "firebase/storage";
+import { auth, db } from "../../../firebase.config";
+import { getMetadata, updateMetadata } from "firebase/storage";
 import {
   ImageDetails,
   keys,
-  imageFolderPath,
   screenHeight,
   screenWidth,
   imageDetails,
+  formatDate,
+  getImageRef,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import ImagePreview from "../../imagePreview";
+import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 
 const Inspect = () => {
   const params = useLocalSearchParams();
@@ -33,17 +34,9 @@ const Inspect = () => {
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
-  const [date, setDate] = useState<Date>();
-
-  const getImageRef = () => {
-    const encodedPath = encodeURIComponent(imageFolderPath);
-    const startIndex = url.indexOf(encodedPath) + encodedPath.length;
-    const endIndex = url.indexOf("?alt=media");
-    const imageId = url.substring(startIndex, endIndex);
-    const imageRef = ref(storage, imageFolderPath + imageId);
-
-    return imageRef;
-  };
+  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [oldPose, setOldPose] = useState("");
+  const [oldDate, setOldDate] = useState("");
 
   useEffect(() => {
     const fetchImageSize = async () => {
@@ -65,7 +58,7 @@ const Inspect = () => {
 
     const getImageMetadata = () => {
       try {
-        const ref = getImageRef();
+        const ref = getImageRef(url);
         getMetadata(ref)
           .then((metadata) => {
             setThisImageDetails(
@@ -77,7 +70,9 @@ const Inspect = () => {
               parseInt(month) - 1,
               parseInt(day)
             );
-            setDate(new Date(date));
+            setSelectedDate(new Date(date));
+            setOldPose(metadata.customMetadata.pose);
+            setOldDate(formatDate(metadata.customMetadata.date));
           })
           .catch((error) => {
             console.error("Error getting metadata: ", error);
@@ -99,13 +94,13 @@ const Inspect = () => {
 
   const onDateChange = (event, selectedDate) => {
     setShowCalendar(false);
-    setDate(selectedDate);
+    setSelectedDate(selectedDate);
     const updatedDetails: ImageDetails = { ...thisImageDetails };
     updatedDetails["date"] = selectedDate.toLocaleDateString();
     setThisImageDetails(updatedDetails);
   };
 
-  const updateImageMetadata = () => {
+  const updateImageMetadata = async () => {
     if (!displayDetails) setDisplayDetails(true);
     else if (url) {
       const newMetadata = {
@@ -113,9 +108,22 @@ const Inspect = () => {
           ...thisImageDetails,
         },
       };
-      const ref = getImageRef();
-
-      updateMetadata(ref, newMetadata)
+      const currentUserId = auth.currentUser?.uid;
+      const userRef = doc(db, "users", currentUserId);
+      const date = formatDate(thisImageDetails["date"]);
+      if (thisImageDetails.pose !== oldPose || date !== oldDate) {
+        await updateDoc(userRef, {
+          images: arrayRemove({ url: url, pose: oldPose, date: oldDate }),
+        });
+        await updateDoc(userRef, {
+          images: arrayUnion({
+            url: url,
+            pose: thisImageDetails.pose,
+            date: date,
+          }),
+        });
+      }
+      updateMetadata(getImageRef(url), newMetadata)
         .then((metadata) => {
           Alert.alert("New Details saved.");
           console.log("Metadata saved:", metadata.customMetadata);
@@ -186,7 +194,7 @@ const Inspect = () => {
           {showCalendar && (
             <DateTimePicker
               testID="dateTimePicker"
-              value={date}
+              value={selectedDate}
               mode={"date"}
               onChange={onDateChange}
             />
