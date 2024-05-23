@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -30,32 +30,51 @@ import {
   formatDate,
 } from "../../constants";
 import { ImageSize } from "expo-camera";
+// import ImageEditor from "@react-native-community/image-editor";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as base64js from "base64-js";
+import { WebView } from "react-native-webview";
 
 const MyCameraPreview = ({ onExitPreview, imageUri }) => {
-  const [imageScale, setImageScale] = useState<number>(1);
+  const [imageHeight, setImageHeight] = useState<number>(imageUri.height);
+  const [imageWidth, setImageWidth] = useState<number>(imageUri.width);
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
-  const date: Date = new Date(Date.now());
+  const webViewRef = useRef(null);
+  const [modifiedBase64, setModifiedBase64] = useState(null);
+  const [pixy, setPixy] = useState(null);
 
+  const imageScale = imageUri.height / imageUri.width;
+  const date: Date = new Date(Date.now());
+  const [base64image, setBase64image] = useState("");
+
+  const onMessage = (event) => {
+    const pixelData = JSON.parse(event.nativeEvent.data);
+    if (pixelData[0] == "/") {
+      // console.log("Pixel Data:", pixelData);
+      setBase64image(pixelData);
+    }
+    console.log(pixelData.length);
+    setPixy(pixelData);
+  };
   useEffect(() => {
     const fetchImageSize = async () => {
       try {
-        const { width, height }: ImageSize = await new Promise(
-          (resolve, reject) => {
-            Image.getSize(
-              imageUri,
-              (width, height) => resolve({ width, height }),
-              reject
-            );
+        const manipResult = await ImageManipulator.manipulateAsync(
+          imageUri.uri,
+          [{ resize: { width: 100 } }],
+          {
+            format: ImageManipulator.SaveFormat.JPEG,
+            base64: true,
           }
         );
-        setImageScale(height / width);
+        setBase64image(manipResult.base64);
+        // console.log(manipResult.base64);
       } catch (error) {
         console.error("Error getting image size:", error);
       }
     };
-
     fetchImageSize();
   }, []);
 
@@ -80,7 +99,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
         customMetadata: { ...thisImageDetails },
       };
 
-      uploadImage(imageUri, metadata)
+      uploadImage(imageUri.uri, metadata)
         .then(async (downloadURL) => {
           Alert.alert("Image saved.");
           console.log("Image saved. URL:", downloadURL);
@@ -109,21 +128,104 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
 
   const uploadImage = async (uri, metadata) => {
     const imageName = uri.match(/([^\/]+)(?=\.\w+$)/)[0];
-    const respone = await fetch(uri);
-    const blob = await respone.blob();
+    const response = await fetch(uri);
+    console.log(response);
+    const blob = await response.blob();
     const imageRef = ref(storage, imageFolderPath + imageName);
     await uploadBytes(imageRef, blob, metadata);
     const downloadURL = await getDownloadURL(imageRef);
-
     return downloadURL;
+  };
+
+  // Function to convert base64 image data to pixel array
+  const base64ToPixels = (base64String) => {
+    return base64js.toByteArray(base64String);
+  };
+
+  const pixelsToBase64 = (pixels) => {
+    return base64js.fromByteArray(pixels);
+  };
+
+  const uploadImagee = async (blob, filename) => {
+    // const uploadUri = `data:image/jpeg;base64,${base64Data}`;
+    const reference = ref(storage, filename);
+
+    try {
+      console.log(blob);
+      await uploadBytes(reference, blob);
+      console.log("Image uploaded to Firebase!");
+    } catch (e) {
+      console.error("Upload failed", e);
+    }
+  };
+  const loadAndProcessImage = `
+  (function() {
+    const img = new Image();
+    img.src = 'data:image/jpeg;base64,${base64image}';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+      const pixelData = Array.from(imageData.data);
+      window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+    };
+  })();
+`;
+  const handleSave = () => {
+    // if (modifiedBase64) {
+    //   saveNewImage(modifiedBase64);
+    // }
+    let pixelData = pixy;
+
+    for (let i = 0; i < pixelData.length; i += 4) {
+      pixelData[i] = 255 - pixelData[i]; // Invert Red
+      pixelData[i + 1] = 255 - pixelData[i + 1]; // Invert Green
+      pixelData[i + 2] = 255 - pixelData[i + 2]; // Invert Blue
+    }
+
+    const newPixelData = JSON.stringify(pixelData);
+    console.log(newPixelData);
+    webViewRef.current.injectJavaScript(`
+      (function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.src = 'data:image/jpeg;base64,${base64image}';
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const imageData = ctx.createImageData(img.width, img.height);
+          const pixelData = ${newPixelData};
+          for (let i = 0; i < pixelData.length; i++) {
+            imageData.data[i] = pixelData[i];
+          }
+          ctx.putImageData(imageData, 0, 0);
+          const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
+          window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
+        };
+      })();
+    `);
   };
 
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerTitle: "Preview Picture" }} />
+      <WebView
+        ref={webViewRef}
+        onMessage={onMessage}
+        originWhitelist={["*"]}
+        source={{ html: "<html><body></body></html>" }}
+        onLoad={() => {
+          webViewRef.current.injectJavaScript(loadAndProcessImage);
+        }}
+        style={{ flex: 1 }}
+      />
       {!displayDetails ? (
         <ImageBackground
-          source={{ uri: imageUri }}
+          source={{ uri: `data:image/jpeg;base64,${base64image}` }}
           style={{
             width: screenWidth,
             height: screenWidth * imageScale,
@@ -141,7 +243,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
             }}
           >
             <Image
-              source={{ uri: imageUri }}
+              source={{ uri: imageUri.uri }}
               style={{
                 width: screenWidth / 2,
                 height: (screenWidth / 2) * imageScale,
@@ -174,7 +276,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
         <Text style={styles.buttonText}>X</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={saveImage} style={styles.saveButton}>
+      <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
         <Text style={styles.buttonText}>
           {!displayDetails ? "Details" : "Save"}
         </Text>
@@ -187,7 +289,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
-    backgroundColor: "white",
+    backgroundColor: "grey",
     flexDirection: "row",
     position: "relative",
     justifyContent: "center",
