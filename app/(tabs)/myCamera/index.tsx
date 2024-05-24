@@ -1,8 +1,14 @@
 import React, { useEffect } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { Stack, router, useFocusEffect } from "expo-router";
-import { Camera } from "expo-camera";
-import { CameraType } from "expo-camera/build/Camera.types";
+import { Camera } from "expo-camera/legacy";
 import MyCameraPreview from "./myCameraPreview";
 import { useIsFocused } from "@react-navigation/native";
 import { screenWidth } from "../../constants";
@@ -11,10 +17,11 @@ const MyCamera = () => {
   let camera;
   const [previewVisible, setPreviewVisible] = React.useState<boolean>(false);
   const [capturedImage, setCapturedImage] = React.useState<any>(null);
-  const [cameraType, setCameraType] = React.useState<CameraType>(
-    CameraType.back
-  );
-  const [cameraActive, setCameraActive] = React.useState<boolean>(false);
+  const [cameraType, setCameraType] = React.useState(1);
+  // const [cameraType, setCameraType] = React.useState(CameraType.back);
+  // const [hasPermission, setHasPermission] = React.useState(null);
+
+  const [cameraActive, setCameraActive] = React.useState(null);
   const isFocused = useIsFocused();
 
   useEffect(() => {
@@ -24,6 +31,7 @@ const MyCamera = () => {
         setCameraActive(true);
       } else {
         Alert.alert("Access denied");
+        setCameraActive(false);
       }
     })();
 
@@ -46,7 +54,7 @@ const MyCamera = () => {
   useEffect(() => {
     if (!isFocused) {
       // Code to execute when leaving the tab
-      setCameraActive(false);
+      setCameraActive(null);
     }
 
     return () => {
@@ -57,17 +65,31 @@ const MyCamera = () => {
   const takePicture = async () => {
     if (!camera) return;
     const photo = await camera.takePictureAsync();
+    // console.log("poza:", photo);
     setPreviewVisible(true);
     setCapturedImage(photo);
+    // console.log("c:", capturedImage.base64.substring(0, 500));
   };
 
   const switchCamera = () => {
-    setCameraType((prevType) =>
-      prevType === CameraType.back ? CameraType.front : CameraType.back
-    );
+    setCameraType((cameraType + 1) % 2);
+    // setCameraType((prevType) =>
+    //   prevType === CameraType.back ? CameraType.front : CameraType.back
+    // );
   };
 
+  // if (cameraActive === null) {
+  //   return (
+
+  //   );
+  // }
+
+  if (cameraActive === false) {
+    return <Text>No access to camera</Text>;
+  }
+
   const handleExitCameraPreview = () => {
+    setCapturedImage(null);
     setPreviewVisible(false);
   };
 
@@ -80,14 +102,14 @@ const MyCamera = () => {
           imageUri={capturedImage}
         />
       ) : (
-        cameraActive && (
-          <View
-            style={{
-              flexDirection: "column",
-              flexWrap: "wrap",
-              justifyContent: "flex-start",
-            }}
-          >
+        <View
+          style={{
+            flexDirection: "column",
+            flexWrap: "wrap",
+            justifyContent: "flex-start",
+          }}
+        >
+          {cameraActive ? (
             <Camera
               style={{
                 width: screenWidth,
@@ -98,21 +120,33 @@ const MyCamera = () => {
               ref={(r) => {
                 camera = r;
               }}
-            ></Camera>
-            <View style={styles.ButtonContainer}>
-              <TouchableOpacity
-                onPress={takePicture}
-                style={styles.captureButton}
-              />
-              <TouchableOpacity
-                style={styles.flipButton}
-                onPress={switchCamera}
-              >
-                <Text style={styles.buttonText}>Flip</Text>
-              </TouchableOpacity>
+            />
+          ) : (
+            <View
+              style={{
+                width: screenWidth,
+                height: (screenWidth * 4) / 3,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              {cameraActive === null ? (
+                <ActivityIndicator size="large" />
+              ) : (
+                <Text>No access to camera</Text>
+              )}
             </View>
+          )}
+          <View style={styles.ButtonContainer}>
+            <TouchableOpacity
+              onPress={takePicture}
+              style={styles.captureButton}
+            />
+            <TouchableOpacity style={styles.flipButton} onPress={switchCamera}>
+              <Text style={styles.buttonText}>Flip</Text>
+            </TouchableOpacity>
           </View>
-        )
+        </View>
       )}
     </View>
   );

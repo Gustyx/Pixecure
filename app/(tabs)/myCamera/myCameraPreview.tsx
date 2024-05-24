@@ -29,13 +29,13 @@ import {
   imageDetails,
   formatDate,
 } from "../../constants";
-import { ImageSize } from "expo-camera";
-// import ImageEditor from "@react-native-community/image-editor";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as base64js from "base64-js";
 import { WebView } from "react-native-webview";
 
 const MyCameraPreview = ({ onExitPreview, imageUri }) => {
+  const [base64image, setBase64image] = useState("");
+  // console.log("1:", base64image.substring(0, 500));
   const [imageHeight, setImageHeight] = useState<number>(imageUri.height);
   const [imageWidth, setImageWidth] = useState<number>(imageUri.width);
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
@@ -47,30 +47,30 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
 
   const imageScale = imageUri.height / imageUri.width;
   const date: Date = new Date(Date.now());
-  const [base64image, setBase64image] = useState("");
 
   const onMessage = (event) => {
     const pixelData = JSON.parse(event.nativeEvent.data);
     if (pixelData[0] == "/") {
-      // console.log("Pixel Data:", pixelData);
+      console.log("Pixel Data:", pixelData);
       setBase64image(pixelData);
     }
-    console.log(pixelData.length);
+    //console.log("cati pixeli:", pixelData.length);
     setPixy(pixelData);
   };
   useEffect(() => {
     const fetchImageSize = async () => {
       try {
+        console.log("uri:", imageUri.uri);
         const manipResult = await ImageManipulator.manipulateAsync(
           imageUri.uri,
-          [{ resize: { width: 100 } }],
+          [{ resize: { width: 500 } }],
           {
             format: ImageManipulator.SaveFormat.JPEG,
             base64: true,
           }
         );
         setBase64image(manipResult.base64);
-        // console.log(manipResult.base64);
+        console.log("lat:", manipResult.width);
       } catch (error) {
         console.error("Error getting image size:", error);
       }
@@ -79,6 +79,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   }, []);
 
   const closeCameraPreview = () => {
+    // setBase64image("");
     onExitPreview();
   };
 
@@ -187,7 +188,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
     }
 
     const newPixelData = JSON.stringify(pixelData);
-    console.log(newPixelData);
+    // console.log(newPixelData);
     webViewRef.current.injectJavaScript(`
       (function() {
         const canvas = document.createElement('canvas');
@@ -225,7 +226,12 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
       />
       {!displayDetails ? (
         <ImageBackground
-          source={{ uri: `data:image/jpeg;base64,${base64image}` }}
+          source={{
+            uri:
+              base64image.substring(0, 4) === "file"
+                ? imageUri.uri
+                : `data:image/jpeg;base64,${base64image}`,
+          }}
           style={{
             width: screenWidth,
             height: screenWidth * imageScale,
