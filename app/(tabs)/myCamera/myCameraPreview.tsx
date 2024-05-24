@@ -12,7 +12,12 @@ import {
   ScrollView,
 } from "react-native";
 import { auth, db, storage } from "../../../firebase.config";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import {
+  getDownloadURL,
+  ref,
+  uploadBytes,
+  uploadString,
+} from "firebase/storage";
 import {
   addDoc,
   collection,
@@ -32,10 +37,10 @@ import {
 import * as ImageManipulator from "expo-image-manipulator";
 import * as base64js from "base64-js";
 import { WebView } from "react-native-webview";
+import * as FileSystem from "expo-file-system";
 
 const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   const [base64image, setBase64image] = useState("");
-  // console.log("1:", base64image.substring(0, 500));
   const [imageHeight, setImageHeight] = useState<number>(imageUri.height);
   const [imageWidth, setImageWidth] = useState<number>(imageUri.width);
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
@@ -48,19 +53,30 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   const imageScale = imageUri.height / imageUri.width;
   const date: Date = new Date(Date.now());
 
-  const onMessage = (event) => {
+  const onMessage = async (event) => {
     const pixelData = JSON.parse(event.nativeEvent.data);
-    if (pixelData[0] == "/") {
-      console.log("Pixel Data:", pixelData);
+    if (pixelData[0] != "/") {
+      setPixy(pixelData);
+    } else {
       setBase64image(pixelData);
+      const imageName = imageUri.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
+      const imageRef = ref(storage, imageName);
+      const fileUri = `${FileSystem.documentDirectory}temp_image.jpg`;
+      await FileSystem.writeAsStringAsync(fileUri, pixelData, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      const response = await fetch(fileInfo.uri);
+      const blob = await response.blob();
+      await uploadBytes(imageRef, blob);
+      const downloadURL = await getDownloadURL(imageRef);
+      console.log(downloadURL);
     }
-    //console.log("cati pixeli:", pixelData.length);
-    setPixy(pixelData);
   };
+
   useEffect(() => {
     const fetchImageSize = async () => {
       try {
-        console.log("uri:", imageUri.uri);
         const manipResult = await ImageManipulator.manipulateAsync(
           imageUri.uri,
           [{ resize: { width: 500 } }],
@@ -70,7 +86,6 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
           }
         );
         setBase64image(manipResult.base64);
-        console.log("lat:", manipResult.width);
       } catch (error) {
         console.error("Error getting image size:", error);
       }
@@ -79,7 +94,6 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   }, []);
 
   const closeCameraPreview = () => {
-    // setBase64image("");
     onExitPreview();
   };
 
@@ -130,7 +144,6 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   const uploadImage = async (uri, metadata) => {
     const imageName = uri.match(/([^\/]+)(?=\.\w+$)/)[0];
     const response = await fetch(uri);
-    console.log(response);
     const blob = await response.blob();
     const imageRef = ref(storage, imageFolderPath + imageName);
     await uploadBytes(imageRef, blob, metadata);
@@ -138,27 +151,6 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
     return downloadURL;
   };
 
-  // Function to convert base64 image data to pixel array
-  const base64ToPixels = (base64String) => {
-    return base64js.toByteArray(base64String);
-  };
-
-  const pixelsToBase64 = (pixels) => {
-    return base64js.fromByteArray(pixels);
-  };
-
-  const uploadImagee = async (blob, filename) => {
-    // const uploadUri = `data:image/jpeg;base64,${base64Data}`;
-    const reference = ref(storage, filename);
-
-    try {
-      console.log(blob);
-      await uploadBytes(reference, blob);
-      console.log("Image uploaded to Firebase!");
-    } catch (e) {
-      console.error("Upload failed", e);
-    }
-  };
   const loadAndProcessImage = `
   (function() {
     const img = new Image();
@@ -188,7 +180,6 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
     }
 
     const newPixelData = JSON.stringify(pixelData);
-    // console.log(newPixelData);
     webViewRef.current.injectJavaScript(`
       (function() {
         const canvas = document.createElement('canvas');
@@ -228,9 +219,10 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
         <ImageBackground
           source={{
             uri:
-              base64image.substring(0, 4) === "file"
-                ? imageUri.uri
-                : `data:image/jpeg;base64,${base64image}`,
+              // base64image.substring(0, 4) === "file"
+              //   ? imageUri.uri
+              //   :
+              `data:image/jpeg;base64,${base64image}`,
           }}
           style={{
             width: screenWidth,
