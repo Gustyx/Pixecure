@@ -12,12 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { auth, db, storage } from "../../../firebase.config";
-import {
-  getDownloadURL,
-  ref,
-  uploadBytes,
-  uploadString,
-} from "firebase/storage";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
   addDoc,
   collection,
@@ -35,7 +30,6 @@ import {
   formatDate,
 } from "../../constants";
 import * as ImageManipulator from "expo-image-manipulator";
-import * as base64js from "base64-js";
 import { WebView } from "react-native-webview";
 import * as FileSystem from "expo-file-system";
 
