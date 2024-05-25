@@ -65,10 +65,8 @@ const MyCamera = () => {
   const takePicture = async () => {
     if (!camera) return;
     const photo = await camera.takePictureAsync();
-    // console.log("poza:", photo);
     setPreviewVisible(true);
     setCapturedImage(photo);
-    // console.log("c:", capturedImage.base64.substring(0, 500));
   };
 
   const switchCamera = () => {
@@ -77,16 +75,6 @@ const MyCamera = () => {
     //   prevType === CameraType.back ? CameraType.front : CameraType.back
     // );
   };
-
-  // if (cameraActive === null) {
-  //   return (
-
-  //   );
-  // }
-
-  if (cameraActive === false) {
-    return <Text>No access to camera</Text>;
-  }
 
   const handleExitCameraPreview = () => {
     setCapturedImage(null);
@@ -128,6 +116,7 @@ const MyCamera = () => {
                 height: (screenWidth * 4) / 3,
                 justifyContent: "center",
                 alignItems: "center",
+                backgroundColor: "black",
               }}
             >
               {cameraActive === null ? (

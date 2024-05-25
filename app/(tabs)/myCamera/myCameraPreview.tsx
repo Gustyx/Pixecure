@@ -43,6 +43,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   const webViewRef = useRef(null);
   const [modifiedBase64, setModifiedBase64] = useState(null);
   const [pixy, setPixy] = useState(null);
+  const [savedImage, setSavedImage] = useState(false);
 
   const imageScale = imageUri.height / imageUri.width;
   const date: Date = new Date(Date.now());
@@ -51,10 +52,19 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
     const pixelData = JSON.parse(event.nativeEvent.data);
     if (pixelData[0] != "/") {
       setPixy(pixelData);
-    } else {
+    } else if (!savedImage) {
+      // saveImage();
+      const currentUserId = auth.currentUser?.uid;
+      const userRef = doc(db, "users", currentUserId);
+      // const imagesCollectionRef = collection(userRef, "images");
+      thisImageDetails["date"] = date.toLocaleDateString();
+      const metadata = {
+        customMetadata: { ...thisImageDetails },
+      };
+
       setBase64image(pixelData);
       const imageName = imageUri.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
-      const imageRef = ref(storage, imageName);
+      const imageRef = ref(storage, imageFolderPath + imageName);
       const fileUri = `${FileSystem.documentDirectory}temp_image.jpg`;
       await FileSystem.writeAsStringAsync(fileUri, pixelData, {
         encoding: FileSystem.EncodingType.Base64,
@@ -62,9 +72,22 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
       const response = await fetch(fileInfo.uri);
       const blob = await response.blob();
-      await uploadBytes(imageRef, blob);
+      await uploadBytes(imageRef, blob, metadata);
       const downloadURL = await getDownloadURL(imageRef);
       console.log(downloadURL);
+      const formatedDate = formatDate(thisImageDetails["date"]);
+
+      await updateDoc(userRef, {
+        images: arrayUnion({
+          url: downloadURL,
+          pose: thisImageDetails.pose,
+          date: formatedDate,
+        }),
+      });
+
+      Alert.alert("Image saved.");
+      // closeCameraPreview();
+      setSavedImage(true);
     }
   };
 
@@ -126,7 +149,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
             }),
           });
 
-          closeCameraPreview();
+          // closeCameraPreview();
         })
         .catch((error) => {
           Alert.alert("Could not save image.");
@@ -161,20 +184,22 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
     };
   })();
 `;
-  const handleSave = () => {
+
+  const handleSaveImage = () => {
     // if (modifiedBase64) {
     //   saveNewImage(modifiedBase64);
     // }
-    let pixelData = pixy;
+    if (!displayDetails) setDisplayDetails(true);
+    else {
+      let pixelData = pixy;
+      for (let i = 0; i < pixelData.length; i += 4) {
+        pixelData[i] = 255 - pixelData[i]; // Invert Red
+        pixelData[i + 1] = 255 - pixelData[i + 1]; // Invert Green
+        pixelData[i + 2] = 255 - pixelData[i + 2]; // Invert Blue
+      }
 
-    for (let i = 0; i < pixelData.length; i += 4) {
-      pixelData[i] = 255 - pixelData[i]; // Invert Red
-      pixelData[i + 1] = 255 - pixelData[i + 1]; // Invert Green
-      pixelData[i + 2] = 255 - pixelData[i + 2]; // Invert Blue
-    }
-
-    const newPixelData = JSON.stringify(pixelData);
-    webViewRef.current.injectJavaScript(`
+      const newPixelData = JSON.stringify(pixelData);
+      webViewRef.current.injectJavaScript(`
       (function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -194,6 +219,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
         };
       })();
     `);
+    }
   };
 
   return (
@@ -207,7 +233,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
         onLoad={() => {
           webViewRef.current.injectJavaScript(loadAndProcessImage);
         }}
-        style={{ flex: 1 }}
+        style={{ flex: 0 }}
       />
       {!displayDetails ? (
         <ImageBackground
@@ -225,7 +251,11 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
           }}
         />
       ) : (
-        <ScrollView>
+        <ScrollView
+          style={{
+            width: "100%",
+          }}
+        >
           <TouchableOpacity
             onPress={() => setDisplayDetails(false)}
             style={{
@@ -235,7 +265,11 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
             }}
           >
             <Image
-              source={{ uri: imageUri.uri }}
+              source={{
+                uri:
+                  // imageUri.uri
+                  `data:image/jpeg;base64,${base64image}`,
+              }}
               style={{
                 width: screenWidth / 2,
                 height: (screenWidth / 2) * imageScale,
@@ -268,7 +302,7 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
         <Text style={styles.buttonText}>X</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+      <TouchableOpacity onPress={handleSaveImage} style={styles.saveButton}>
         <Text style={styles.buttonText}>
           {!displayDetails ? "Details" : "Save"}
         </Text>
