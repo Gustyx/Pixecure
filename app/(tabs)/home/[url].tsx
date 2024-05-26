@@ -23,28 +23,26 @@ import {
   formatDate,
   getImageRef,
 } from "../../constants";
-import { ImageSize } from "expo-camera";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
-import * as FileSystem from "expo-file-system";
 
 const Inspect = () => {
-  const params = useLocalSearchParams();
-  const url = Array.isArray(params.url) ? params.url[0] : params.url;
   const [imageScale, setImageScale] = useState<number>(1);
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [oldPose, setOldPose] = useState("");
-  const [oldDate, setOldDate] = useState("");
-
-  const webViewRef = useRef(null);
+  const [oldPose, setOldPose] = useState<string>("");
+  const [oldDate, setOldDate] = useState<string>("");
   const [base64image, setBase64image] = useState<string>("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const params = useLocalSearchParams();
+  const url = Array.isArray(params.url) ? params.url[0] : params.url;
+  const webViewRef = useRef(null);
+
   const loadAndProcessImage = `
   (function() {
     const img = new Image();

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { Stack, router, useFocusEffect } from "expo-router";
+import { Stack, useFocusEffect } from "expo-router";
 import { Camera } from "expo-camera/legacy";
 import MyCameraPreview from "./myCameraPreview";
 import { useIsFocused } from "@react-navigation/native";
@@ -15,13 +15,12 @@ import { screenWidth } from "../../constants";
 
 const MyCamera = () => {
   let camera;
-  const [previewVisible, setPreviewVisible] = React.useState<boolean>(false);
-  const [capturedImage, setCapturedImage] = React.useState<any>(null);
-  const [cameraType, setCameraType] = React.useState(1);
-  // const [cameraType, setCameraType] = React.useState(CameraType.back);
-  // const [hasPermission, setHasPermission] = React.useState(null);
-
-  const [cameraActive, setCameraActive] = React.useState(null);
+  const [cameraActive, setCameraActive] = useState(null);
+  const [cameraType, setCameraType] = useState<number>(1);
+  const [previewVisible, setPreviewVisible] = useState<boolean>(false);
+  const [capturedImage, setCapturedImage] = useState<any>(null);
+  // const [cameraType, setCameraType] = useState(CameraType.back);
+  // const [hasPermission, setHasPermission] = useState(null);
   const isFocused = useIsFocused();
 
   useEffect(() => {

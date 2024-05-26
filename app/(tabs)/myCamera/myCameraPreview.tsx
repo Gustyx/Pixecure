@@ -13,13 +13,7 @@ import {
 } from "react-native";
 import { auth, db, storage } from "../../../firebase.config";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import {
-  addDoc,
-  collection,
-  doc,
-  updateDoc,
-  arrayUnion,
-} from "firebase/firestore";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import {
   imageFolderPath,
   screenWidth,
@@ -41,8 +35,8 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   const [pixels, setPixels] = useState<number[]>([]);
   const webViewRef = useRef(null);
 
-  const imageScale: number = image.height / image.width;
-  const date: Date = new Date(Date.now());
+  const imageScale = image.height / image.width;
+  const date = new Date(Date.now());
   const loadAndProcessImage = `
   (function() {
     const img = new Image();

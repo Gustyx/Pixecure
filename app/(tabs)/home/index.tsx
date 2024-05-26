@@ -33,13 +33,14 @@ let imagesByPose = {};
 let imagesByDate = {};
 let poseKeys = [];
 let dateKeys = [];
+
 const HomePage = () => {
-  const [categorizedImages, setCategorizedImages] = useState({});
-  const [imageKeys, setImageKeys] = useState([]);
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [categorizedImages, setCategorizedImages] = useState<{}>({});
+  const [imageKeys, setImageKeys] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [menuVisible, setMenuVisible] = useState<boolean>(false);
   const user = useAuth();
+  const router = useRouter();
   const navigation = useNavigation();
 
   useFocusEffect(
