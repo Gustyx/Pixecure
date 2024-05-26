@@ -33,141 +33,16 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
 import * as FileSystem from "expo-file-system";
 
-const MyCameraPreview = ({ onExitPreview, imageUri }) => {
-  const [base64image, setBase64image] = useState("");
-  const [imageHeight, setImageHeight] = useState<number>(imageUri.height);
-  const [imageWidth, setImageWidth] = useState<number>(imageUri.width);
+const MyCameraPreview = ({ onExitPreview, image }) => {
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
+  const [base64image, setBase64image] = useState<string>("");
+  const [pixels, setPixels] = useState<number[]>([]);
   const webViewRef = useRef(null);
-  const [modifiedBase64, setModifiedBase64] = useState(null);
-  const [pixy, setPixy] = useState(null);
-  const [savedImage, setSavedImage] = useState(false);
 
-  const imageScale = imageUri.height / imageUri.width;
+  const imageScale: number = image.height / image.width;
   const date: Date = new Date(Date.now());
-
-  const onMessage = async (event) => {
-    const pixelData = JSON.parse(event.nativeEvent.data);
-    if (pixelData[0] != "/") {
-      setPixy(pixelData);
-    } else if (!savedImage) {
-      // saveImage();
-      const currentUserId = auth.currentUser?.uid;
-      const userRef = doc(db, "users", currentUserId);
-      // const imagesCollectionRef = collection(userRef, "images");
-      thisImageDetails["date"] = date.toLocaleDateString();
-      const metadata = {
-        customMetadata: { ...thisImageDetails },
-      };
-
-      setBase64image(pixelData);
-      const imageName = imageUri.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
-      const imageRef = ref(storage, imageFolderPath + imageName);
-      const fileUri = `${FileSystem.documentDirectory}temp_image.jpg`;
-      await FileSystem.writeAsStringAsync(fileUri, pixelData, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      const fileInfo = await FileSystem.getInfoAsync(fileUri);
-      const response = await fetch(fileInfo.uri);
-      const blob = await response.blob();
-      await uploadBytes(imageRef, blob, metadata);
-      const downloadURL = await getDownloadURL(imageRef);
-      console.log(downloadURL);
-      const formatedDate = formatDate(thisImageDetails["date"]);
-
-      await updateDoc(userRef, {
-        images: arrayUnion({
-          url: downloadURL,
-          pose: thisImageDetails.pose,
-          date: formatedDate,
-        }),
-      });
-
-      Alert.alert("Image saved.");
-      // closeCameraPreview();
-      setSavedImage(true);
-    }
-  };
-
-  useEffect(() => {
-    const fetchImageSize = async () => {
-      try {
-        const manipResult = await ImageManipulator.manipulateAsync(
-          imageUri.uri,
-          [{ resize: { width: 500 } }],
-          {
-            format: ImageManipulator.SaveFormat.JPEG,
-            base64: true,
-          }
-        );
-        setBase64image(manipResult.base64);
-      } catch (error) {
-        console.error("Error getting image size:", error);
-      }
-    };
-    fetchImageSize();
-  }, []);
-
-  const closeCameraPreview = () => {
-    onExitPreview();
-  };
-
-  const onDetailsTextChange = (key, value) => {
-    const updatedDetails: ImageDetails = { ...thisImageDetails };
-    updatedDetails[key] = value;
-    setThisImageDetails(updatedDetails);
-  };
-
-  const saveImage = () => {
-    if (!displayDetails) setDisplayDetails(true);
-    else if (imageUri) {
-      const currentUserId = auth.currentUser?.uid;
-      const userRef = doc(db, "users", currentUserId);
-      // const imagesCollectionRef = collection(userRef, "images");
-      thisImageDetails["date"] = date.toLocaleDateString();
-      const metadata = {
-        customMetadata: { ...thisImageDetails },
-      };
-
-      uploadImage(imageUri.uri, metadata)
-        .then(async (downloadURL) => {
-          Alert.alert("Image saved.");
-          console.log("Image saved. URL:", downloadURL);
-          // await addDoc(imagesCollectionRef, {
-          //   url: downloadURL,
-          //   name: imageName,
-          // });
-          const date = formatDate(thisImageDetails["date"]);
-
-          await updateDoc(userRef, {
-            images: arrayUnion({
-              url: downloadURL,
-              pose: thisImageDetails.pose,
-              date: date,
-            }),
-          });
-
-          // closeCameraPreview();
-        })
-        .catch((error) => {
-          Alert.alert("Could not save image.");
-          console.error(error);
-        });
-    }
-  };
-
-  const uploadImage = async (uri, metadata) => {
-    const imageName = uri.match(/([^\/]+)(?=\.\w+$)/)[0];
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const imageRef = ref(storage, imageFolderPath + imageName);
-    await uploadBytes(imageRef, blob, metadata);
-    const downloadURL = await getDownloadURL(imageRef);
-    return downloadURL;
-  };
-
   const loadAndProcessImage = `
   (function() {
     const img = new Image();
@@ -185,20 +60,100 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
   })();
 `;
 
+  const closeCameraPreview = () => {
+    onExitPreview();
+  };
+
+  useEffect(() => {
+    const fetchImageSize = async () => {
+      try {
+        const manipResult = await ImageManipulator.manipulateAsync(
+          image.uri,
+          [{ resize: { width: 500 } }],
+          {
+            // format: ImageManipulator.SaveFormat.JPEG,
+            base64: true,
+          }
+        );
+        setBase64image(manipResult.base64);
+      } catch (error) {
+        console.error("Error getting image size:", error);
+      }
+    };
+    fetchImageSize();
+  }, []);
+
+  const onDetailsTextChange = (key, value) => {
+    const updatedDetails: ImageDetails = { ...thisImageDetails };
+    updatedDetails[key] = value;
+    setThisImageDetails(updatedDetails);
+  };
+
+  const onMessage = async (event) => {
+    const webViewMessage = JSON.parse(event.nativeEvent.data);
+    if (webViewMessage[0] != "/") {
+      setPixels(webViewMessage);
+    } else {
+      saveImage(webViewMessage);
+    }
+  };
+
+  const saveImage = async (webViewMessage) => {
+    const currentUserId = auth.currentUser?.uid;
+    const userRef = doc(db, "users", currentUserId);
+    thisImageDetails["date"] = date.toLocaleDateString();
+    const metadata = {
+      customMetadata: { ...thisImageDetails },
+    };
+    // setBase64image(webViewMessage);
+    const fileUri = `${FileSystem.documentDirectory}temp_image.jpg`;
+    await FileSystem.writeAsStringAsync(fileUri, webViewMessage, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    const fileInfo = await FileSystem.getInfoAsync(fileUri);
+    uploadImage(fileInfo.uri, metadata)
+      .then(async (downloadURL) => {
+        const formatedDate = formatDate(thisImageDetails["date"]);
+        await updateDoc(userRef, {
+          images: arrayUnion({
+            url: downloadURL,
+            pose: thisImageDetails.pose,
+            date: formatedDate,
+          }),
+        });
+        console.log("Image saved. URL:", downloadURL);
+        Alert.alert("Image saved.");
+      })
+      .catch((error) => {
+        Alert.alert("Could not save image.");
+        console.error(error);
+      })
+      .finally(() => {
+        closeCameraPreview();
+      });
+  };
+
+  const uploadImage = async (uri, metadata) => {
+    const imageName = image.uri.match(/([^\/]+)(?=\.\w+$)/)[0];
+    const imageRef = ref(storage, imageFolderPath + imageName);
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    await uploadBytes(imageRef, blob, metadata);
+    const downloadURL = await getDownloadURL(imageRef);
+    return downloadURL;
+  };
+
   const handleSaveImage = () => {
-    // if (modifiedBase64) {
-    //   saveNewImage(modifiedBase64);
-    // }
     if (!displayDetails) setDisplayDetails(true);
     else {
-      let pixelData = pixy;
-      for (let i = 0; i < pixelData.length; i += 4) {
-        pixelData[i] = 255 - pixelData[i]; // Invert Red
-        pixelData[i + 1] = 255 - pixelData[i + 1]; // Invert Green
-        pixelData[i + 2] = 255 - pixelData[i + 2]; // Invert Blue
+      let newPixels = pixels;
+      for (let i = 0; i < newPixels.length; i += 4) {
+        newPixels[i] = 255 - newPixels[i]; // Invert Red
+        newPixels[i + 1] = 255 - newPixels[i + 1]; // Invert Green
+        newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
       }
 
-      const newPixelData = JSON.stringify(pixelData);
+      const newPixelData = JSON.stringify(newPixels);
       webViewRef.current.injectJavaScript(`
       (function() {
         const canvas = document.createElement('canvas');
@@ -238,11 +193,8 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
       {!displayDetails ? (
         <ImageBackground
           source={{
-            uri:
-              // base64image.substring(0, 4) === "file"
-              //   ? imageUri.uri
-              //   :
-              `data:image/jpeg;base64,${base64image}`,
+            uri: image.uri,
+            // `data:image/jpeg;base64,${base64image}`,
           }}
           style={{
             width: screenWidth,
@@ -266,9 +218,8 @@ const MyCameraPreview = ({ onExitPreview, imageUri }) => {
           >
             <Image
               source={{
-                uri:
-                  // imageUri.uri
-                  `data:image/jpeg;base64,${base64image}`,
+                uri: image.uri,
+                // `data:image/jpeg;base64,${base64image}`,
               }}
               style={{
                 width: screenWidth / 2,

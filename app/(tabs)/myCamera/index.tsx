@@ -87,7 +87,7 @@ const MyCamera = () => {
       {previewVisible && capturedImage ? (
         <MyCameraPreview
           onExitPreview={handleExitCameraPreview}
-          imageUri={capturedImage}
+          image={capturedImage}
         />
       ) : (
         <View

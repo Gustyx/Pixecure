@@ -72,7 +72,7 @@ const RegisterPage = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.expiryLabel}>Create Account</Text>
+      <Text style={styles.pageTitle}>Create Account</Text>
       <TextInput
         placeholder="Email"
         placeholderTextColor={"white"}
@@ -90,8 +90,8 @@ const RegisterPage = () => {
         autoCapitalize="none"
         style={styles.input}
       />
-      <TouchableOpacity onPress={mockCringe} style={styles.loginButton}>
-        <Text style={styles.signupText}>signUp</Text>
+      <TouchableOpacity onPress={mockCringe} style={styles.signupButton}>
+        <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
     </View>
   );
@@ -100,11 +100,11 @@ const RegisterPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    // justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f2f2f2",
   },
-  expiryLabel: {
+  pageTitle: {
     fontSize: 30,
     fontWeight: "bold",
     color: "#333",
@@ -119,18 +119,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     color: "white",
   },
-  loginButton: {
+  signupButton: {
     backgroundColor: "black",
     marginTop: 20,
     width: (Dimensions.get("window").width * 66) / 100,
     height: (Dimensions.get("window").height * 7.5) / 100,
     borderRadius: 15,
-    display: "flex",
+    // display: "flex",
     justifyContent: "center",
     alignItems: "center",
     margin: "auto",
   },
-  signupText: {
+  buttonText: {
     color: "white",
   },
 });

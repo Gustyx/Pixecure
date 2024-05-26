@@ -36,7 +36,7 @@ const LoginPage = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.expiryLabel}>Log In</Text>
+      <Text style={styles.pageTitle}>Log In</Text>
       <TextInput
         placeholder="Email"
         placeholderTextColor={"white"}
@@ -55,7 +55,7 @@ const LoginPage = () => {
         style={styles.input}
       />
       <TouchableOpacity onPress={signIn} style={styles.loginButton}>
-        <Text style={styles.signupText}>logIn</Text>
+        <Text style={styles.buttonText}>Log In</Text>
       </TouchableOpacity>
     </View>
   );
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f2f2f2",
   },
-  expiryLabel: {
+  pageTitle: {
     fontSize: 30,
     fontWeight: "bold",
     color: "#333",
@@ -89,12 +89,12 @@ const styles = StyleSheet.create({
     width: (Dimensions.get("window").width * 66) / 100,
     height: (Dimensions.get("window").height * 7.5) / 100,
     borderRadius: 15,
-    display: "flex",
+    // display: "flex",
     justifyContent: "center",
     alignItems: "center",
     margin: "auto",
   },
-  signupText: {
+  buttonText: {
     color: "white",
   },
 });
