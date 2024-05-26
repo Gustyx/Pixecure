@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -10,6 +10,7 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { auth, db } from "../../../firebase.config";
 import { getMetadata, updateMetadata } from "firebase/storage";
@@ -25,6 +26,9 @@ import {
 import { ImageSize } from "expo-camera";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
+import * as ImageManipulator from "expo-image-manipulator";
+import { WebView } from "react-native-webview";
+import * as FileSystem from "expo-file-system";
 
 const Inspect = () => {
   const params = useLocalSearchParams();
@@ -38,19 +42,39 @@ const Inspect = () => {
   const [oldPose, setOldPose] = useState("");
   const [oldDate, setOldDate] = useState("");
 
+  const webViewRef = useRef(null);
+  const [base64image, setBase64image] = useState<string>("");
+  const [imageUrl, setImageUrl] = useState("");
+  const loadAndProcessImage = `
+  (function() {
+    const img = new Image();
+    img.src = 'data:image/jpeg;base64,${base64image}';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+      const pixelData = Array.from(imageData.data);
+      window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+    };
+  })();
+`;
+
   useEffect(() => {
     const fetchImageSize = async () => {
       try {
-        const { width, height }: ImageSize = await new Promise(
-          (resolve, reject) => {
-            Image.getSize(
-              url,
-              (width, height) => resolve({ width, height }),
-              reject
-            );
+        const manipResult = await ImageManipulator.manipulateAsync(
+          url,
+          [{ resize: { width: 100 } }],
+          {
+            // format: ImageManipulator.SaveFormat.JPEG,
+            base64: true,
           }
         );
-        setImageScale(height / width);
+        setBase64image(manipResult.base64);
+        setImageScale(manipResult.height / manipResult.width);
       } catch (error) {
         console.error("Error getting image size:", error);
       }
@@ -85,6 +109,45 @@ const Inspect = () => {
     fetchImageSize();
     getImageMetadata();
   }, []);
+
+  const onMessage = async (event) => {
+    const webViewMessage = JSON.parse(event.nativeEvent.data);
+    if (webViewMessage[0] != "/") {
+      getDecryptedImageUrl(webViewMessage);
+    } else {
+      setImageUrl(webViewMessage);
+    }
+  };
+
+  const getDecryptedImageUrl = (webViewMessage) => {
+    let newPixels = webViewMessage;
+    for (let i = 0; i < newPixels.length; i += 4) {
+      newPixels[i] = 255 - newPixels[i]; // Invert Red
+      newPixels[i + 1] = 255 - newPixels[i + 1]; // Invert Green
+      newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
+    }
+    const newPixelData = JSON.stringify(newPixels);
+    webViewRef.current.injectJavaScript(`
+    (function() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,${base64image}';
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const imageData = ctx.createImageData(img.width, img.height);
+        const pixelData = ${newPixelData};
+        for (let i = 0; i < pixelData.length; i++) {
+          imageData.data[i] = pixelData[i];
+        }
+        ctx.putImageData(imageData, 0, 0);
+        const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
+        window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
+      };
+    })();
+  `);
+  };
 
   const onDetailsTextChange = (key, value) => {
     const updatedDetails: ImageDetails = { ...thisImageDetails };
@@ -138,32 +201,83 @@ const Inspect = () => {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerTitle: "Inspect Page" }} />
+      <WebView
+        ref={webViewRef}
+        onMessage={onMessage}
+        originWhitelist={["*"]}
+        source={{ html: "<html><body></body></html>" }}
+        onLoad={() => {
+          webViewRef.current.injectJavaScript(loadAndProcessImage);
+        }}
+        style={{ flex: 0 }}
+      />
       {!displayDetails ? (
-        <ImageBackground
-          source={{ uri: url }}
-          style={{
-            width: screenWidth,
-            height: screenWidth * imageScale,
-          }}
-        />
-      ) : (
-        <ScrollView>
-          <TouchableOpacity
-            onPress={() => setDisplayDetails(false)}
+        imageUrl ? (
+          <ImageBackground
+            source={{
+              uri:
+                // url
+                `data:image/jpeg;base64,${imageUrl}`,
+            }}
             style={{
-              alignSelf: "center",
-              marginTop: "5%",
-              marginBottom: "10%",
+              width: screenWidth,
+              height: screenWidth * imageScale,
+            }}
+          />
+        ) : (
+          <View
+            style={{
+              width: screenWidth,
+              height: (screenWidth * 4) / 3,
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            <Image
-              source={{ uri: url }}
+            <ActivityIndicator size="large" />
+          </View>
+        )
+      ) : (
+        <ScrollView
+          style={{
+            width: "100%",
+          }}
+        >
+          {imageUrl ? (
+            <TouchableOpacity
+              onPress={() => setDisplayDetails(false)}
+              style={{
+                alignSelf: "center",
+                marginTop: "5%",
+                marginBottom: "10%",
+              }}
+            >
+              <Image
+                source={{
+                  uri:
+                    //  url
+                    `data:image/jpeg;base64,${imageUrl}`,
+                }}
+                style={{
+                  width: screenWidth / 2,
+                  height: (screenWidth / 2) * imageScale,
+                }}
+              />
+            </TouchableOpacity>
+          ) : (
+            <View
               style={{
                 width: screenWidth / 2,
-                height: (screenWidth / 2) * imageScale,
+                height: ((screenWidth / 2) * 4) / 3,
+                alignSelf: "center",
+                marginTop: "5%",
+                marginBottom: "10%",
+                justifyContent: "center",
+                alignItems: "center",
               }}
-            />
-          </TouchableOpacity>
+            >
+              <ActivityIndicator size="large" />
+            </View>
+          )}
           {keys &&
             keys.map((key, i) => {
               return (

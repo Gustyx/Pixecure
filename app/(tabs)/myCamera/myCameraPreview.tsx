@@ -69,7 +69,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           image.uri,
-          [{ resize: { width: 500 } }],
+          [{ resize: { width: 100 } }],
           {
             // format: ImageManipulator.SaveFormat.JPEG,
             base64: true,
