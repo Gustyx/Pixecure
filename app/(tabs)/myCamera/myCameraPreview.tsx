@@ -22,6 +22,7 @@ import {
   ImageDetails,
   imageDetails,
   formatDate,
+  smallImageFolderPath,
 } from "../../constants";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
@@ -63,7 +64,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           image.uri,
-          [{ resize: { width: 100 } }],
+          [{ resize: { width: 500 } }],
           {
             // format: ImageManipulator.SaveFormat.JPEG,
             base64: true,
@@ -106,16 +107,17 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     });
     const fileInfo = await FileSystem.getInfoAsync(fileUri);
     uploadImage(fileInfo.uri, metadata)
-      .then(async (downloadURL) => {
+      .then(async (downloadURLs) => {
         const formatedDate = formatDate(thisImageDetails["date"]);
         await updateDoc(userRef, {
           images: arrayUnion({
-            url: downloadURL,
+            url: downloadURLs[0],
+            smallUrl: downloadURLs[1],
             pose: thisImageDetails.pose,
             date: formatedDate,
           }),
         });
-        console.log("Image saved. URL:", downloadURL);
+        console.log("Image saved. URL:", downloadURLs[0]);
         Alert.alert("Image saved.");
       })
       .catch((error) => {
@@ -134,7 +136,16 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     const blob = await response.blob();
     await uploadBytes(imageRef, blob, metadata);
     const downloadURL = await getDownloadURL(imageRef);
-    return downloadURL;
+
+    const smallImage = await ImageManipulator.manipulateAsync(uri, [
+      { resize: { width: 100 } },
+    ]);
+    const smallImageRef = ref(storage, smallImageFolderPath + imageName);
+    const smallResponse = await fetch(smallImage.uri);
+    const smallBlob = await smallResponse.blob();
+    await uploadBytes(smallImageRef, smallBlob);
+    const smallDownloadURL = await getDownloadURL(smallImageRef);
+    return [downloadURL, smallDownloadURL];
   };
 
   const handleSaveImage = () => {

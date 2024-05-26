@@ -28,37 +28,19 @@ import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
 
+let selectedDate: Date;
+let imageScale = 1;
+
 const Inspect = () => {
-  const [imageScale, setImageScale] = useState<number>(1);
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
-  const [selectedDate, setSelectedDate] = useState<Date>();
-  const [oldPose, setOldPose] = useState<string>("");
-  const [oldDate, setOldDate] = useState<string>("");
   const [base64image, setBase64image] = useState<string>("");
   const [imageUrl, setImageUrl] = useState<string>("");
   const params = useLocalSearchParams();
-  const url = Array.isArray(params.url) ? params.url[0] : params.url;
+  const url = Array.isArray(params.id) ? params.id[0] : params.id;
   const webViewRef = useRef(null);
-
-  const loadAndProcessImage = `
-  (function() {
-    const img = new Image();
-    img.src = 'data:image/jpeg;base64,${base64image}';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, img.width, img.height);
-      const pixelData = Array.from(imageData.data);
-      window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-    };
-  })();
-`;
 
   useEffect(() => {
     const fetchImageSize = async () => {
@@ -71,8 +53,8 @@ const Inspect = () => {
             base64: true,
           }
         );
+        imageScale = manipResult.height / manipResult.width;
         setBase64image(manipResult.base64);
-        setImageScale(manipResult.height / manipResult.width);
       } catch (error) {
         console.error("Error getting image size:", error);
       }
@@ -92,9 +74,7 @@ const Inspect = () => {
               parseInt(month) - 1,
               parseInt(day)
             );
-            setSelectedDate(new Date(date));
-            setOldPose(metadata.customMetadata.pose);
-            setOldDate(formatDate(metadata.customMetadata.date));
+            selectedDate = new Date(date);
           })
           .catch((error) => {
             console.error("Error getting metadata: ", error);
@@ -153,11 +133,11 @@ const Inspect = () => {
     setThisImageDetails(updatedDetails);
   };
 
-  const onDateChange = (event, selectedDate) => {
+  const onDateChange = (event, date) => {
     setShowCalendar(false);
-    setSelectedDate(selectedDate);
+    selectedDate = date;
     const updatedDetails: ImageDetails = { ...thisImageDetails };
-    updatedDetails["date"] = selectedDate.toLocaleDateString();
+    updatedDetails["date"] = date.toLocaleDateString();
     setThisImageDetails(updatedDetails);
   };
 
@@ -172,13 +152,19 @@ const Inspect = () => {
       const currentUserId = auth.currentUser?.uid;
       const userRef = doc(db, "users", currentUserId);
       const date = formatDate(thisImageDetails["date"]);
-      if (thisImageDetails.pose !== oldPose || date !== oldDate) {
+      if (thisImageDetails.pose !== params.pose || date !== params.date) {
         await updateDoc(userRef, {
-          images: arrayRemove({ url: url, pose: oldPose, date: oldDate }),
+          images: arrayRemove({
+            url: params.url,
+            smallUrl: params.smallUrl,
+            pose: params.pose,
+            date: params.date,
+          }),
         });
         await updateDoc(userRef, {
           images: arrayUnion({
             url: url,
+            smallUrl: params.smallUrl,
             pose: thisImageDetails.pose,
             date: date,
           }),
@@ -196,19 +182,38 @@ const Inspect = () => {
     }
   };
 
+  const loadAndProcessImage = `
+  (function() {
+    const img = new Image();
+    img.src = 'data:image/jpeg;base64,${base64image}';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+      const pixelData = Array.from(imageData.data);
+      window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+    };
+  })();
+`;
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerTitle: "Inspect Page" }} />
-      <WebView
-        ref={webViewRef}
-        onMessage={onMessage}
-        originWhitelist={["*"]}
-        source={{ html: "<html><body></body></html>" }}
-        onLoad={() => {
-          webViewRef.current.injectJavaScript(loadAndProcessImage);
-        }}
-        style={{ flex: 0 }}
-      />
+      {base64image && (
+        <WebView
+          ref={webViewRef}
+          onMessage={onMessage}
+          originWhitelist={["*"]}
+          source={{ html: "<html><body></body></html>" }}
+          onLoad={() => {
+            webViewRef.current.injectJavaScript(loadAndProcessImage);
+          }}
+          style={{ flex: 0 }}
+        />
+      )}
       {!displayDetails ? (
         imageUrl ? (
           <ImageBackground

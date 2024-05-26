@@ -63,7 +63,7 @@ const MyCamera = () => {
 
   const takePicture = async () => {
     if (!camera) return;
-    const photo = await camera.takePictureAsync();
+    const photo = await camera.takePictureAsync({ base64: true });
     setPreviewVisible(true);
     setCapturedImage(photo);
   };

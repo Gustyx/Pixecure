@@ -9,9 +9,10 @@ export interface ImageDetails {
   date: string;
   extra: string;
 }
-export const screenWidth: number = Dimensions.get("window").width;
-export const screenHeight: number = Dimensions.get("window").height;
-export const imageFolderPath: string = "images/";
+export const screenWidth = Dimensions.get("window").width;
+export const screenHeight = Dimensions.get("window").height;
+export const imageFolderPath = "images/";
+export const smallImageFolderPath = "small_images/";
 export const imageDetails: ImageDetails = {
   pose: "",
   kg: "",
@@ -19,7 +20,7 @@ export const imageDetails: ImageDetails = {
   date: "",
   extra: "",
 };
-export const keys: string[] = Object.keys(imageDetails);
+export const keys = Object.keys(imageDetails);
 export const months = [
   "January",
   "February",

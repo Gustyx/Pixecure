@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -20,6 +20,7 @@ import { getImageRef, months, screenWidth } from "../../constants";
 import { Menu, MenuItem } from "react-native-material-menu";
 import { useNavigation } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import WebView from "react-native-webview";
 
 let key;
 AsyncStorage.getItem("sortingKey").then((value) => {
@@ -42,6 +43,7 @@ const HomePage = () => {
   const user = useAuth();
   const router = useRouter();
   const navigation = useNavigation();
+  const webViewRef = useRef(null);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -124,7 +126,13 @@ const HomePage = () => {
 
   const inspectImage = (image) => {
     const imageUrl = encodeURIComponent(image.url);
-    router.push({ pathname: `/home/${imageUrl}` });
+    const param = {
+      url: imageUrl,
+      smallUrl: encodeURIComponent(image.smallUrl),
+      pose: image.pose,
+      date: image.date,
+    };
+    router.push({ pathname: `/home/${imageUrl}`, params: param });
   };
 
   const deleteImage = async (image) => {
@@ -141,6 +149,7 @@ const HomePage = () => {
     await updateDoc(userRef, {
       images: arrayRemove({
         url: image.url,
+        smallUrl: image.smallUrl,
         pose: image.pose,
         date: image.date,
       }),
@@ -195,7 +204,45 @@ const HomePage = () => {
         onPress={() => inspectImage(item)}
         onLongPress={() => deleteImage(item)}
       >
-        <Image source={{ uri: item.url }} style={styles.image} />
+        <Image source={{ uri: item.smallUrl }} style={styles.image} />
+        {/* <WebView
+          originWhitelist={["*"]}
+          source={{
+            html: `
+          <html>
+            <body style="margin:0;padding:0;">
+              <img id="originalImage" src="${item.url}" style="width: 20%;" />
+              <script>
+                (function() {
+                  const img = document.getElementById('originalImage');
+                  img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                    const pixelData = imageData.data;
+
+                    // Revert pixel changes (assuming simple inversion used for modification)
+                    for (let i = 0; i < pixelData.length; i += 4) {
+                      pixelData[i] = 255 - pixelData[i];       // Revert Red
+                      pixelData[i + 1] = 255 - pixelData[i + 1]; // Revert Green
+                      pixelData[i + 2] = 255 - pixelData[i + 2]; // Revert Blue
+                    }
+
+                    ctx.putImageData(imageData, 0, 0);
+                    const originalBase64 = canvas.toDataURL('image/jpeg');
+                    img.src = originalBase64;
+                  };
+                })();
+              </script>
+            </body>
+          </html>
+        `,
+          }}
+          style={styles.image}
+        /> */}
       </TouchableOpacity>
     ),
     [inspectImage, deleteImage]
@@ -258,18 +305,93 @@ const HomePage = () => {
     );
   }
 
+  const revertPixelsScript = (url) => `
+    (function() {
+      const img = new Image();
+      img.src = '${url}';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const pixelData = imageData.data;
+
+        // Revert pixel changes (assuming simple inversion used for modification)
+        for (let i = 0; i < pixelData.length; i += 4) {
+          pixelData[i] = 255 - pixelData[i];       // Revert Red
+          pixelData[i + 1] = 255 - pixelData[i + 1]; // Revert Green
+          pixelData[i + 2] = 255 - pixelData[i + 2]; // Revert Blue
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        const originalBase64 = canvas.toDataURL('image/png');
+        document.body.innerHTML = '<img src="' + originalBase64 + '" style="width: 100%;" />';
+      };
+    })();
+  `;
+
+  // const renderItem = useCallback(
+  //   ({ item, index }) => (
+  //     <WebView
+  //       originWhitelist={["*"]}
+  //       source={{
+  //         html: `
+  //         <html>
+  //           <body style="margin:0;padding:0;">
+  //             <img id="originalImage" src="${item.url}" style="width:100%;" />
+  //             <script>
+  //               (function() {
+  //                 const img = document.getElementById('originalImage');
+  //                 img.onload = () => {
+  //                   const canvas = document.createElement('canvas');
+  //                   canvas.width = img.width;
+  //                   canvas.height = img.height;
+  //                   const ctx = canvas.getContext('2d');
+  //                   ctx.drawImage(img, 0, 0);
+  //                   const imageData = ctx.getImageData(0, 0, img.width, img.height);
+  //                   const pixelData = imageData.data;
+
+  //                   // Revert pixel changes (assuming simple inversion used for modification)
+  //                   for (let i = 0; i < pixelData.length; i += 4) {
+  //                     pixelData[i] = 255 - pixelData[i];       // Revert Red
+  //                     pixelData[i + 1] = 255 - pixelData[i + 1]; // Revert Green
+  //                     pixelData[i + 2] = 255 - pixelData[i + 2]; // Revert Blue
+  //                   }
+
+  //                   ctx.putImageData(imageData, 0, 0);
+  //                   const originalBase64 = canvas.toDataURL('image/png');
+  //                   img.src = originalBase64;
+  //                 };
+  //               })();
+  //             </script>
+  //           </body>
+  //         </html>
+  //       `,
+  //       }}
+  //       style={styles.image}
+  //     />
+  //   ),
+  //   [inspectImage, deleteImage]
+  // );
+
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1 }}>
       {imageKeys.length > 0 ? (
-        <FlatList
-          data={imageKeys}
-          renderItem={renderCategory}
-          keyExtractor={(item) => item}
-          style={{ width: "100%" }}
-        />
+        <View style={styles.container}>
+          <FlatList
+            data={imageKeys}
+            renderItem={renderCategory}
+            keyExtractor={(item) => item}
+            style={{ width: "100%" }}
+          />
+        </View>
       ) : (
-        <View style={styles.noImages}>
-          <Text>No images to display</Text>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text>No images to display.</Text>
         </View>
       )}
       <StatusBar style="auto" />
@@ -320,8 +442,8 @@ const styles = StyleSheet.create({
     height: (screenWidth / 5 - 2) * 1.5,
   },
   noImages: {
-    flex: 1,
-    justifyContent: "center",
+    // flex: 1,
+    // justifyContent: "center",
     alignItems: "center",
   },
 });
