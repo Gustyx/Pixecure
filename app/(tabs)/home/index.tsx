@@ -29,13 +29,13 @@ AsyncStorage.getItem("sortingKey").then((value) => {
     key = "Date";
   }
 });
+let imagesByPose = {};
+let imagesByDate = {};
+let poseKeys = [];
+let dateKeys = [];
 const HomePage = () => {
   const [categorizedImages, setCategorizedImages] = useState({});
-  const [imagesByPose, setImagesByPose] = useState({});
-  const [imagesByDate, setImagesByDate] = useState({});
   const [imageKeys, setImageKeys] = useState([]);
-  const [poseKeys, setPoseKeys] = useState([]);
-  const [dateKeys, setDateKeys] = useState([]);
   const [menuVisible, setMenuVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -63,9 +63,9 @@ const HomePage = () => {
               }
               categorizedImagesByDate[date].push(image);
             }
-            const poseKeys = Object.keys(categorizedImagesByPose);
-            const dateKeys = Object.keys(categorizedImagesByDate);
-            dateKeys.sort((keyA, keyB) => {
+            const pKeys = Object.keys(categorizedImagesByPose);
+            const dKeys = Object.keys(categorizedImagesByDate);
+            dKeys.sort((keyA, keyB) => {
               const [monthA, yearA] = keyA.split(" - ");
               const [monthB, yearB] = keyB.split(" - ");
               if (yearA !== yearB) {
@@ -76,10 +76,10 @@ const HomePage = () => {
               }
               return 0;
             });
-            setImagesByPose(categorizedImagesByPose);
-            setImagesByDate(categorizedImagesByDate);
-            setPoseKeys(poseKeys);
-            setDateKeys(dateKeys);
+            imagesByPose = categorizedImagesByPose;
+            imagesByDate = categorizedImagesByDate;
+            poseKeys = pKeys;
+            dateKeys = dKeys;
             if (key === "Pose") {
               setCategorizedImages(categorizedImagesByPose);
               setImageKeys(poseKeys);
@@ -100,6 +100,23 @@ const HomePage = () => {
       getImages();
     }, [])
   );
+
+  const handleSortChange = async (newKey) => {
+    try {
+      await AsyncStorage.setItem("sortingKey", newKey);
+      key = newKey;
+      if (newKey === "Pose") {
+        setImageKeys(poseKeys);
+        setCategorizedImages(imagesByPose);
+      } else {
+        setImageKeys(dateKeys);
+        setCategorizedImages(imagesByDate);
+      }
+    } catch (error) {
+      console.error("Failed to save sorting key:", error);
+    }
+    closeMenu();
+  };
 
   const openMenu = () => setMenuVisible(true);
   const closeMenu = () => setMenuVisible(false);
@@ -147,42 +164,26 @@ const HomePage = () => {
           item.date === image.date
         )
     );
-    setImagesByPose(newImagesByPose);
-    setImagesByDate(newImagesByDate);
+    imagesByPose = newImagesByPose;
+    imagesByDate = newImagesByDate;
 
     if (newImagesByPose[image.pose].length === 0) {
       const removePoseKey = poseKeys.filter((item) => item !== image.pose);
-      setPoseKeys(removePoseKey);
+      poseKeys = removePoseKey;
       if (poseIsKey) {
         setImageKeys(removePoseKey);
       }
     }
     if (newImagesByDate[image.date].length === 0) {
       const removeDateKey = dateKeys.filter((item) => item !== image.date);
-      setDateKeys(removeDateKey);
+      dateKeys = removeDateKey;
       if (!poseIsKey) {
         setImageKeys(removeDateKey);
       }
     }
+
     if (poseIsKey) setCategorizedImages(newImagesByPose);
     else setCategorizedImages(newImagesByDate);
-  };
-
-  const handleSortChange = async (newKey) => {
-    try {
-      await AsyncStorage.setItem("sortingKey", newKey);
-      key = newKey;
-      if (newKey === "Pose") {
-        setImageKeys(poseKeys);
-        setCategorizedImages(imagesByPose);
-      } else {
-        setImageKeys(dateKeys);
-        setCategorizedImages(imagesByDate);
-      }
-    } catch (error) {
-      console.error("Failed to save sorting key:", error);
-    }
-    closeMenu();
   };
 
   const renderImage = useCallback(
