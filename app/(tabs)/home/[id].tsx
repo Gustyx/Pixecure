@@ -30,17 +30,36 @@ import { WebView } from "react-native-webview";
 
 let selectedDate: Date;
 let imageScale = 1;
+let base64image;
+let webViewLoaded = false;
 
 const Inspect = () => {
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
-  const [base64image, setBase64image] = useState<string>("");
+  // const [base64image, setBase64image] = useState<string>("");
+  const [firstBase64image, setFirstBase64image] = useState("");
   const [imageUrl, setImageUrl] = useState<string>("");
   const params = useLocalSearchParams();
   const url = Array.isArray(params.id) ? params.id[0] : params.id;
   const webViewRef = useRef(null);
+  const loadAndProcessImage = `
+    (function() {
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,${firstBase64image}';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const pixelData = Array.from(imageData.data);
+        window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+      };
+    })();
+  `;
 
   useEffect(() => {
     const fetchImageSize = async () => {
@@ -54,7 +73,28 @@ const Inspect = () => {
           }
         );
         imageScale = manipResult.height / manipResult.width;
-        setBase64image(manipResult.base64);
+        const loadAndProcessImageFaster = `
+        (function() {
+          const img = new Image();
+          img.src = 'data:image/jpeg;base64,${manipResult.base64}';
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, img.width, img.height);
+            const pixelData = Array.from(imageData.data);
+            window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+          };
+        })();
+      `;
+        base64image = manipResult.base64;
+        if (webViewLoaded) {
+          webViewRef.current.injectJavaScript(loadAndProcessImageFaster);
+        } else {
+          setFirstBase64image(base64image);
+        }
       } catch (error) {
         console.error("Error getting image size:", error);
       }
@@ -182,23 +222,6 @@ const Inspect = () => {
     }
   };
 
-  const loadAndProcessImage = `
-  (function() {
-    const img = new Image();
-    img.src = 'data:image/jpeg;base64,${base64image}';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, img.width, img.height);
-      const pixelData = Array.from(imageData.data);
-      window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-    };
-  })();
-`;
-
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerTitle: "Inspect Page" }} />
@@ -207,9 +230,15 @@ const Inspect = () => {
           ref={webViewRef}
           onMessage={onMessage}
           originWhitelist={["*"]}
-          source={{ html: "<html><body></body></html>" }}
+          source={{
+            html: "<html><body></body></html>",
+          }}
           onLoad={() => {
-            webViewRef.current.injectJavaScript(loadAndProcessImage);
+            if (!webViewLoaded) {
+              webViewRef.current.injectJavaScript(loadAndProcessImage);
+              webViewLoaded = true;
+              console.log(33);
+            }
           }}
           style={{ flex: 0 }}
         />

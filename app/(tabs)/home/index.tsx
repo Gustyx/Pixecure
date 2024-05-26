@@ -197,15 +197,17 @@ const HomePage = () => {
   };
 
   const renderImage = useCallback(
-    ({ item, index }) => (
-      <TouchableOpacity
-        style={styles.imageWrapper}
-        key={`${item}-${index}`}
-        onPress={() => inspectImage(item)}
-        onLongPress={() => deleteImage(item)}
-      >
-        <Image source={{ uri: item.smallUrl }} style={styles.image} />
-        {/* <WebView
+    ({ item, index }) => {
+      // console.log(item.smallUrl);
+      const render = (
+        <TouchableOpacity
+          style={styles.imageWrapper}
+          key={`${item}-${index}`}
+          onPress={() => inspectImage(item)}
+          onLongPress={() => deleteImage(item)}
+        >
+          <Image source={{ uri: item.smallUrl }} style={styles.image} />
+          {/* <WebView
           originWhitelist={["*"]}
           source={{
             html: `
@@ -243,8 +245,10 @@ const HomePage = () => {
           }}
           style={styles.image}
         /> */}
-      </TouchableOpacity>
-    ),
+        </TouchableOpacity>
+      );
+      return render;
+    },
     [inspectImage, deleteImage]
   );
 
