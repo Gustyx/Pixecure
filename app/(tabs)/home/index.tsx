@@ -147,25 +147,25 @@ const HomePage = () => {
           item.date === image.date
         )
     );
+    setImagesByPose(newImagesByPose);
+    setImagesByDate(newImagesByDate);
 
     if (newImagesByPose[image.pose].length === 0) {
       const removePoseKey = poseKeys.filter((item) => item !== image.pose);
       setPoseKeys(removePoseKey);
-      setImageKeys(removePoseKey);
+      if (poseIsKey) {
+        setImageKeys(removePoseKey);
+      }
     }
     if (newImagesByDate[image.date].length === 0) {
       const removeDateKey = dateKeys.filter((item) => item !== image.date);
       setDateKeys(removeDateKey);
-      setImageKeys(removeDateKey);
+      if (!poseIsKey) {
+        setImageKeys(removeDateKey);
+      }
     }
-    setImagesByPose(newImagesByPose);
-    setImagesByDate(newImagesByDate);
-
-    if (poseIsKey) {
-      setCategorizedImages(newImagesByPose);
-    } else {
-      setCategorizedImages(newImagesByDate);
-    }
+    if (poseIsKey) setCategorizedImages(newImagesByPose);
+    else setCategorizedImages(newImagesByDate);
   };
 
   const handleSortChange = async (newKey) => {
