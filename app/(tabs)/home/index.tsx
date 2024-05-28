@@ -286,7 +286,9 @@ const HomePage = () => {
         <TouchableOpacity
           style={styles.imageWrapper}
           key={`${item}-${index}`}
-          onPress={() => inspectImage(item, index)}
+          onPress={() =>
+            inspectImage(item, base64strings.indexOf(item.smallUrl) / 2)
+          }
           onLongPress={() =>
             deleteImage(item, base64strings.indexOf(item.smallUrl) / 2)
           }
