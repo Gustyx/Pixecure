@@ -54,6 +54,7 @@ const HomePage = () => {
   const router = useRouter();
   const navigation = useNavigation();
   const webViewRef = useRef(null);
+
   const script = (base64s) => {
     for (let i = 1; i < base64s.length; i += 2) {
       const loadAndProcessImage = `
@@ -177,6 +178,9 @@ const HomePage = () => {
     }, [])
   );
 
+  const openMenu = () => setMenuVisible(true);
+  const closeMenu = () => setMenuVisible(false);
+
   const handleSortChange = async (newKey) => {
     try {
       await AsyncStorage.setItem("sortingKey", newKey);
@@ -193,9 +197,6 @@ const HomePage = () => {
     }
     closeMenu();
   };
-
-  const openMenu = () => setMenuVisible(true);
-  const closeMenu = () => setMenuVisible(false);
 
   const inspectImage = (image, index) => {
     const imageUrl = encodeURIComponent(image.url);
@@ -372,15 +373,15 @@ const HomePage = () => {
     } else {
       decryptedBase64image.push(webViewMessage);
     }
-    let i = 0;
-    for (const key of Object.keys(categorizedImages)) {
-      for (const val of categorizedImages[key]) {
-        i++;
-      }
-    }
-    if (decryptedBase64image.length == i) {
-      setDecryptionReady(!decryptionReady);
-    }
+    // let i = 0;
+    // for (const key of Object.keys(categorizedImages)) {
+    //   for (const val of categorizedImages[key]) {
+    //     i++;
+    //   }
+    // }
+    // if (decryptedBase64image.length == i) {
+    setDecryptionReady(!decryptionReady);
+    // }
   };
 
   const getDecryptedImageUrl = (webViewMessage) => {
