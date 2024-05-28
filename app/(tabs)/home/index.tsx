@@ -42,11 +42,16 @@ let poseKeys = [];
 let dateKeys = [];
 let webViewLoaded = false;
 let base64strings = [];
-let decryptedBase64image = [];
+let decryptedBase64strings = [];
+let p = 0;
 
 const HomePage = () => {
-  const [categorizedImages, setCategorizedImages] = useState<{}>({});
-  const [imageKeys, setImageKeys] = useState<string[]>([]);
+  const [imageState, setImageState] = useState({
+    categorizedImages: {},
+    imageKeys: [],
+  });
+  // const [categorizedImages, setCategorizedImages] = useState<{}>({});
+  // const [imageKeys, setImageKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
   const [decryptionReady, setDecryptionReady] = useState(false);
@@ -55,27 +60,13 @@ const HomePage = () => {
   const navigation = useNavigation();
   const webViewRef = useRef(null);
 
-  const script = (base64s) => {
-    for (let i = 1; i < base64s.length; i += 2) {
-      const loadAndProcessImage = `
-      (function() {
-        const img = new Image();
-        img.src = 'data:image/jpeg;base64,${base64s[i]}';
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          const imageData = ctx.getImageData(0, 0, img.width, img.height);
-          const pixelData = Array.from(imageData.data);
-          pixelData.push(${i})
-          window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-        };
-      })();
-    `;
-      webViewRef.current.injectJavaScript(loadAndProcessImage);
-    }
+  console.log("rerender", p++);
+
+  const updateImageState = (newCategorizedImages, newImageKeys) => {
+    setImageState({
+      categorizedImages: newCategorizedImages,
+      imageKeys: newImageKeys,
+    });
   };
 
   useFocusEffect(
@@ -107,14 +98,10 @@ const HomePage = () => {
                 }
               );
               if (!webViewLoaded) {
-                base64strings = [
-                  ...base64strings,
-                  image.smallUrl,
-                  manipResult.base64,
-                ];
+                base64strings.push(image.smallUrl, manipResult.base64);
               } else if (base64strings.indexOf(manipResult.base64) === -1) {
                 base64strings.push(image.smallUrl, manipResult.base64);
-                const loadAndProcessImageFaster = `
+                const loadBase64andSendPixelsFaster = `
                 (function() {
                   const img = new Image();
                   img.src = 'data:image/jpeg;base64,${manipResult.base64}';
@@ -131,7 +118,9 @@ const HomePage = () => {
                   };
                 })();
               `;
-                webViewRef.current.injectJavaScript(loadAndProcessImageFaster);
+                webViewRef.current.injectJavaScript(
+                  loadBase64andSendPixelsFaster
+                );
               }
             }
             const pKeys = Object.keys(categorizedImagesByPose);
@@ -158,11 +147,13 @@ const HomePage = () => {
             poseKeys = pKeys;
             dateKeys = dKeys;
             if (key === "Pose") {
-              setCategorizedImages(categorizedImagesByPose);
-              setImageKeys(poseKeys);
+              updateImageState(categorizedImagesByPose, poseKeys);
+              // setCategorizedImages(categorizedImagesByPose);
+              // setImageKeys(poseKeys);
             } else {
-              setCategorizedImages(categorizedImagesByDate);
-              setImageKeys(dateKeys);
+              updateImageState(categorizedImagesByDate, dateKeys);
+              // setCategorizedImages(categorizedImagesByDate);
+              // setImageKeys(dateKeys);
             }
           } else {
             console.log("No such document!");
@@ -186,11 +177,13 @@ const HomePage = () => {
       await AsyncStorage.setItem("sortingKey", newKey);
       key = newKey;
       if (newKey === "Pose") {
-        setImageKeys(poseKeys);
-        setCategorizedImages(imagesByPose);
+        updateImageState(imagesByPose, poseKeys);
+        // setImageKeys(poseKeys);
+        // setCategorizedImages(imagesByPose);
       } else {
-        setImageKeys(dateKeys);
-        setCategorizedImages(imagesByDate);
+        updateImageState(imagesByDate, dateKeys);
+        // setImageKeys(dateKeys);
+        // setCategorizedImages(imagesByDate);
       }
     } catch (error) {
       console.error("Failed to save sorting key:", error);
@@ -205,13 +198,13 @@ const HomePage = () => {
       smallUrl: encodeURIComponent(image.smallUrl),
       pose: image.pose,
       date: image.date,
-      decryptedSmallUrl: decryptedBase64image[index],
+      decryptedSmallUrl: decryptedBase64strings[index],
     };
     router.push({ pathname: `/home/${imageUrl}`, params: param });
   };
 
   const deleteImage = async (image, index) => {
-    decryptedBase64image.splice(index, 1);
+    decryptedBase64strings.splice(index, 1);
     base64strings.splice(index * 2, 2);
     const imageRef = getImageRef(image.url);
     const smallImageRef = getSmallImageRef(image.smallUrl);
@@ -240,81 +233,82 @@ const HomePage = () => {
       }),
     });
 
-    const poseIsKey = categorizedImages[image.pose];
-    let newImagesByPose = { ...imagesByPose };
-    newImagesByPose[image.pose] = newImagesByPose[image.pose].filter(
-      (item) =>
-        !(
-          item.url === image.url &&
-          item.pose === image.pose &&
-          item.date === image.date
-        )
+    imagesByPose[image.pose] = imagesByPose[image.pose].filter(
+      (item) => !(item.url === image.url)
     );
-    let newImagesByDate = { ...imagesByDate };
-    newImagesByDate[image.date] = newImagesByDate[image.date].filter(
-      (item) =>
-        !(
-          item.url === image.url &&
-          item.pose === image.pose &&
-          item.date === image.date
-        )
+    imagesByDate[image.date] = imagesByDate[image.date].filter(
+      (item) => !(item.url === image.url)
     );
-    imagesByPose = newImagesByPose;
-    imagesByDate = newImagesByDate;
+    // let newImagesByPose = { ...imagesByPose };
+    // newImagesByPose[image.pose] = newImagesByPose[image.pose].filter(
+    //   (item) =>
+    //     !(
+    //       item.url === image.url &&
+    //       item.pose === image.pose &&
+    //       item.date === image.date
+    //     )
+    // );
+    // let newImagesByDate = { ...imagesByDate };
+    // newImagesByDate[image.date] = newImagesByDate[image.date].filter(
+    //   (item) =>
+    //     !(
+    //       item.url === image.url &&
+    //       item.pose === image.pose &&
+    //       item.date === image.date
+    //     )
+    // );
+    // imagesByPose = newImagesByPose;
+    // imagesByDate = newImagesByDate;
 
-    if (newImagesByPose[image.pose].length === 0) {
-      const removePoseKey = poseKeys.filter((item) => item !== image.pose);
-      poseKeys = removePoseKey;
-      if (poseIsKey) {
-        setImageKeys(removePoseKey);
-      }
+    if (imagesByPose[image.pose].length === 0) {
+      poseKeys = poseKeys.filter((item) => item !== image.pose);
     }
-    if (newImagesByDate[image.date].length === 0) {
-      const removeDateKey = dateKeys.filter((item) => item !== image.date);
-      dateKeys = removeDateKey;
-      if (!poseIsKey) {
-        setImageKeys(removeDateKey);
-      }
+    if (imagesByDate[image.date].length === 0) {
+      dateKeys = dateKeys.filter((item) => item !== image.date);
     }
 
-    if (poseIsKey) setCategorizedImages(newImagesByPose);
-    else setCategorizedImages(newImagesByDate);
+    if (key === "Pose") {
+      updateImageState(imagesByPose, poseKeys);
+      // setCategorizedImages(newImagesByPose);
+      // setImageKeys(poseKeys);
+    } else {
+      updateImageState(imagesByDate, dateKeys);
+      // setCategorizedImages(newImagesByDate);
+      // setImageKeys(dateKeys);
+    }
   };
 
-  const renderImage = useCallback(
-    ({ item, index }) => {
-      const render = (
-        <TouchableOpacity
-          style={styles.imageWrapper}
-          key={`${item}-${index}`}
-          onPress={() =>
-            inspectImage(item, base64strings.indexOf(item.smallUrl) / 2)
-          }
-          onLongPress={() =>
-            deleteImage(item, base64strings.indexOf(item.smallUrl) / 2)
-          }
-        >
-          <Image
-            source={{
-              uri: `data:image/jpeg;base64,${
-                decryptedBase64image[base64strings.indexOf(item.smallUrl) / 2]
-              }`,
-            }}
-            style={styles.image}
-          />
-        </TouchableOpacity>
-      );
-      return render;
-    },
-    [inspectImage, deleteImage]
-  );
+  const renderImage = useCallback(({ item, index }) => {
+    const render = (
+      <TouchableOpacity
+        style={styles.imageWrapper}
+        key={`${item}-${index}`}
+        onPress={() =>
+          inspectImage(item, base64strings.indexOf(item.smallUrl) / 2)
+        }
+        onLongPress={() =>
+          deleteImage(item, base64strings.indexOf(item.smallUrl) / 2)
+        }
+      >
+        <Image
+          source={{
+            uri: `data:image/jpeg;base64,${
+              decryptedBase64strings[base64strings.indexOf(item.smallUrl) / 2]
+            }`,
+          }}
+          style={styles.image}
+        />
+      </TouchableOpacity>
+    );
+    return render;
+  }, []);
 
   const renderCategory = useCallback(
     ({ item: category }) => (
       <View style={styles.categorySection}>
         <Text style={styles.categoryTitle}>{category ? category : "None"}</Text>
         <FlatList
-          data={categorizedImages[category]}
+          data={imageState.categorizedImages[category]}
           renderItem={renderImage}
           keyExtractor={(item, index) => `${item}-${index}`}
           numColumns={5}
@@ -324,7 +318,7 @@ const HomePage = () => {
         />
       </View>
     ),
-    [categorizedImages]
+    [imageState]
   );
 
   React.useLayoutEffect(() => {
@@ -371,7 +365,7 @@ const HomePage = () => {
     if (webViewMessage[0] != "/") {
       getDecryptedImageUrl(webViewMessage);
     } else {
-      decryptedBase64image.push(webViewMessage);
+      decryptedBase64strings.push(webViewMessage);
     }
     // let i = 0;
     // for (const key of Object.keys(categorizedImages)) {
@@ -379,7 +373,7 @@ const HomePage = () => {
     //     i++;
     //   }
     // }
-    // if (decryptedBase64image.length == i) {
+    // if (decryptedBase64strings.length == i) {
     setDecryptionReady(!decryptionReady);
     // }
   };
@@ -392,7 +386,7 @@ const HomePage = () => {
       newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
     }
     const newPixelData = JSON.stringify(newPixels);
-    webViewRef.current.injectJavaScript(`
+    const loadPixelsAndSendBase64 = `
     (function() {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -413,7 +407,31 @@ const HomePage = () => {
         window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
       };
     })();
-  `);
+  `;
+    webViewRef.current.injectJavaScript(loadPixelsAndSendBase64);
+  };
+
+  const script = (strings) => {
+    for (let i = 1; i < strings.length; i += 2) {
+      const loadBase64andSendPixels = `
+      (function() {
+        const img = new Image();
+        img.src = 'data:image/jpeg;base64,${strings[i]}';
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const imageData = ctx.getImageData(0, 0, img.width, img.height);
+          const pixelData = Array.from(imageData.data);
+          pixelData.push(${i})
+          window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+        };
+      })();
+    `;
+      webViewRef.current.injectJavaScript(loadBase64andSendPixels);
+    }
   };
 
   return (
@@ -433,10 +451,10 @@ const HomePage = () => {
         }}
         style={{ flex: 0 }}
       />
-      {imageKeys.length > 0 ? (
+      {imageState.imageKeys.length > 0 ? (
         <View style={{ width: "100%" }}>
           <FlatList
-            data={imageKeys}
+            data={imageState.imageKeys}
             renderItem={renderCategory}
             keyExtractor={(item) => item}
             style={{ width: "100%" }}
