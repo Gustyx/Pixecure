@@ -197,13 +197,14 @@ const HomePage = () => {
   const openMenu = () => setMenuVisible(true);
   const closeMenu = () => setMenuVisible(false);
 
-  const inspectImage = (image) => {
+  const inspectImage = (image, index) => {
     const imageUrl = encodeURIComponent(image.url);
     const param = {
       url: imageUrl,
       smallUrl: encodeURIComponent(image.smallUrl),
       pose: image.pose,
       date: image.date,
+      decryptedSmallUrl: decryptedBase64image[index],
     };
     router.push({ pathname: `/home/${imageUrl}`, params: param });
   };
@@ -285,7 +286,7 @@ const HomePage = () => {
         <TouchableOpacity
           style={styles.imageWrapper}
           key={`${item}-${index}`}
-          onPress={() => inspectImage(item)}
+          onPress={() => inspectImage(item, index)}
           onLongPress={() =>
             deleteImage(item, base64strings.indexOf(item.smallUrl) / 2)
           }

@@ -38,7 +38,6 @@ const Inspect = () => {
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
-  // const [base64image, setBase64image] = useState<string>("");
   const [firstBase64image, setFirstBase64image] = useState("");
   const [imageUrl, setImageUrl] = useState<string>("");
   const params = useLocalSearchParams();
@@ -213,7 +212,7 @@ const Inspect = () => {
       updateMetadata(getImageRef(url), newMetadata)
         .then((metadata) => {
           Alert.alert("New Details saved.");
-          // console.log("Metadata saved:", metadata.customMetadata);
+          console.log("Metadata saved:", metadata.customMetadata);
         })
         .catch((error) => {
           Alert.alert("Could not update details.");
@@ -264,7 +263,22 @@ const Inspect = () => {
               alignItems: "center",
             }}
           >
-            <ActivityIndicator size="large" />
+            <ImageBackground
+              source={{
+                uri: `data:image/jpeg;base64,${params.decryptedSmallUrl}`,
+              }}
+              style={{
+                width: screenWidth,
+                height: screenWidth * imageScale,
+              }}
+            />
+            <ActivityIndicator
+              size="large"
+              style={{
+                position: "absolute",
+                alignSelf: "center",
+              }}
+            />
           </View>
         )
       ) : (
