@@ -38,14 +38,16 @@ const Inspect = () => {
     useState<ImageDetails>(imageDetails);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const [firstBase64image, setFirstBase64image] = useState("");
-  const [imageUrl, setImageUrl] = useState<string>("");
+  const [decryptedBase64, setDecryptedBase64] = useState<string>("");
   const params = useLocalSearchParams();
   const url = Array.isArray(params.id) ? params.id[0] : params.id;
   const webViewRef = useRef(null);
-  const loadAndProcessImage = `
+
+  const loadBase64andSendPixelsScript = (base64string) => {
+    const script = `
     (function() {
       const img = new Image();
-      img.src = 'data:image/jpeg;base64,${firstBase64image}';
+      img.src = 'data:image/jpeg;base64,${base64string}';
       img.onload = () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
@@ -58,6 +60,32 @@ const Inspect = () => {
       };
     })();
   `;
+    return script;
+  };
+
+  const loadPixelsAndSendBase64Script = (base64string, pixels) => {
+    const script = `
+    (function() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,${base64string}';
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const imageData = ctx.createImageData(img.width, img.height);
+        const pixelData = ${pixels};
+        for (let i = 0; i < pixelData.length - 1; i++) {
+          imageData.data[i] = pixelData[i];
+        }
+        ctx.putImageData(imageData, 0, 0);
+        const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
+        window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
+      };
+    })();
+  `;
+    return script;
+  };
 
   useEffect(() => {
     const fetchImageSize = async () => {
@@ -73,23 +101,8 @@ const Inspect = () => {
         imageScale = manipResult.height / manipResult.width;
         base64image = manipResult.base64;
         if (webViewLoaded) {
-          const loadAndProcessImageFaster = `
-          (function() {
-            const img = new Image();
-            img.src = 'data:image/jpeg;base64,${manipResult.base64}';
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.width;
-              canvas.height = img.height;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img, 0, 0);
-              const imageData = ctx.getImageData(0, 0, img.width, img.height);
-              const pixelData = Array.from(imageData.data);
-              window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-            };
-          })();
-        `;
-          webViewRef.current.injectJavaScript(loadAndProcessImageFaster);
+          const script = loadBase64andSendPixelsScript(base64image);
+          webViewRef.current.injectJavaScript(script);
         } else {
           setFirstBase64image(base64image);
         }
@@ -131,7 +144,7 @@ const Inspect = () => {
     if (webViewMessage[0] != "/") {
       getDecryptedImageUrl(webViewMessage);
     } else {
-      setImageUrl(webViewMessage);
+      setDecryptedBase64(webViewMessage);
     }
   };
 
@@ -143,26 +156,8 @@ const Inspect = () => {
       newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
     }
     const newPixelData = JSON.stringify(newPixels);
-    webViewRef.current.injectJavaScript(`
-    (function() {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.src = 'data:image/jpeg;base64,${base64image}';
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const imageData = ctx.createImageData(img.width, img.height);
-        const pixelData = ${newPixelData};
-        for (let i = 0; i < pixelData.length; i++) {
-          imageData.data[i] = pixelData[i];
-        }
-        ctx.putImageData(imageData, 0, 0);
-        const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
-        window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
-      };
-    })();
-  `);
+    const script = loadPixelsAndSendBase64Script(base64image, newPixelData);
+    webViewRef.current.injectJavaScript(script);
   };
 
   const onDetailsTextChange = (key, value) => {
@@ -233,7 +228,8 @@ const Inspect = () => {
           }}
           onLoad={() => {
             if (!webViewLoaded) {
-              webViewRef.current.injectJavaScript(loadAndProcessImage);
+              const script = loadBase64andSendPixelsScript(firstBase64image);
+              webViewRef.current.injectJavaScript(script);
               webViewLoaded = true;
             }
           }}
@@ -243,8 +239,8 @@ const Inspect = () => {
       {!displayDetails ? (
         <ImageBackground
           source={{
-            uri: imageUrl
-              ? `data:image/jpeg;base64,${imageUrl}`
+            uri: decryptedBase64
+              ? `data:image/jpeg;base64,${decryptedBase64}`
               : `data:image/jpeg;base64,${params.decryptedSmallUrl}`,
           }}
           style={{
@@ -253,7 +249,7 @@ const Inspect = () => {
             justifyContent: "center",
           }}
         >
-          {!imageUrl && <ActivityIndicator size="large" />}
+          {!decryptedBase64 && <ActivityIndicator size="large" />}
         </ImageBackground>
       ) : (
         <ScrollView
@@ -271,8 +267,8 @@ const Inspect = () => {
           >
             <ImageBackground
               source={{
-                uri: imageUrl
-                  ? `data:image/jpeg;base64,${imageUrl}`
+                uri: decryptedBase64
+                  ? `data:image/jpeg;base64,${decryptedBase64}`
                   : `data:image/jpeg;base64,${params.decryptedSmallUrl}`,
               }}
               style={{
@@ -281,7 +277,7 @@ const Inspect = () => {
                 justifyContent: "center",
               }}
             >
-              {!imageUrl && <ActivityIndicator size="large" />}
+              {!decryptedBase64 && <ActivityIndicator size="large" />}
             </ImageBackground>
           </TouchableOpacity>
           {keys &&
