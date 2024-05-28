@@ -30,33 +30,60 @@ import * as FileSystem from "expo-file-system";
 
 let webViewLoaded = false;
 let base64image;
+const date = new Date(Date.now());
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
-  const [firstBase64image, setFirstBase64image] = useState<string>("");
   const [pixels, setPixels] = useState<number[]>([]);
   const webViewRef = useRef(null);
 
   const imageScale = image.height / image.width;
-  const date = new Date(Date.now());
-  const loadAndProcessImage = `
-  (function() {
-    const img = new Image();
-    img.src = 'data:image/jpeg;base64,${firstBase64image}';
-    img.onload = () => {
+
+  const loadBase64andSendPixelsScript = (base64string) => {
+    const script = `
+    (function() {
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,${base64string}';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const pixelData = Array.from(imageData.data);
+        window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+      };
+    })();
+  `;
+    return script;
+  };
+
+  const loadPixelsAndSendBase64Script = (oldBase64string, newPixels) => {
+    const script = `
+    (function() {
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, img.width, img.height);
-      const pixelData = Array.from(imageData.data);
-      window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-    };
-  })();
-`;
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,${oldBase64string}';
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const imageData = ctx.createImageData(img.width, img.height);
+        const pixelData = ${newPixels};
+        for (let i = 0; i < pixelData.length - 1; i++) {
+          imageData.data[i] = pixelData[i];
+        }
+        ctx.putImageData(imageData, 0, 0);
+        const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
+        window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
+      };
+    })();
+  `;
+    return script;
+  };
 
   const closeCameraPreview = () => {
     onExitPreview();
@@ -75,25 +102,8 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         );
         base64image = manipResult.base64;
         if (webViewLoaded) {
-          const loadAndProcessImageFaster = `
-          (function() {
-            const img = new Image();
-            img.src = 'data:image/jpeg;base64,${manipResult.base64}';
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.width;
-              canvas.height = img.height;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img, 0, 0);
-              const imageData = ctx.getImageData(0, 0, img.width, img.height);
-              const pixelData = Array.from(imageData.data);
-              window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-            };
-          })();
-        `;
-          webViewRef.current.injectJavaScript(loadAndProcessImageFaster);
-        } else {
-          setFirstBase64image(base64image);
+          const script = loadBase64andSendPixelsScript(base64image);
+          webViewRef.current.injectJavaScript(script);
         }
       } catch (error) {
         console.error("Error getting image size:", error);
@@ -119,18 +129,16 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   };
 
   const saveImage = async (webViewMessage) => {
+    const fileUri = `${FileSystem.documentDirectory}temp_image.jpg`;
+    await FileSystem.writeAsStringAsync(fileUri, webViewMessage, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
     const currentUserId = auth.currentUser?.uid;
     const userRef = doc(db, "users", currentUserId);
     thisImageDetails["date"] = date.toLocaleDateString();
     const metadata = {
       customMetadata: { ...thisImageDetails },
     };
-    // setBase64image(webViewMessage);
-    // console.log(webViewMessage);
-    const fileUri = `${FileSystem.documentDirectory}temp_image.jpg`;
-    await FileSystem.writeAsStringAsync(fileUri, webViewMessage, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
     const fileInfo = await FileSystem.getInfoAsync(fileUri);
     uploadImage(fileInfo.uri, metadata)
       .then(async (downloadURLs) => {
@@ -185,27 +193,27 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       }
 
       const newPixelData = JSON.stringify(newPixels);
-      webViewRef.current.injectJavaScript(`
-      (function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-        img.src = 'data:image/jpeg;base64,${base64image}';
-        img.onload = () => {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const imageData = ctx.createImageData(img.width, img.height);
-          const pixelData = ${newPixelData};
-          for (let i = 0; i < pixelData.length; i++) {
-            imageData.data[i] = pixelData[i];
-          }
-          ctx.putImageData(imageData, 0, 0);
-          const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
-          window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
-        };
-      })();
-    `);
+      const script = loadPixelsAndSendBase64Script(base64image, newPixelData);
+      webViewRef.current.injectJavaScript(script);
     }
+  };
+
+  const renderDetails = () => {
+    return keys.map((key, i) => (
+      <View key={i} style={styles.detailsContainer}>
+        <Text style={{ marginLeft: "10%" }}>{key}: </Text>
+        {key !== "date" ? (
+          <TextInput
+            value={thisImageDetails[key]}
+            onChangeText={(value) => onDetailsTextChange(key, value)}
+            autoCapitalize="sentences"
+            style={styles.input}
+          />
+        ) : (
+          <Text style={styles.input}>{date.toLocaleDateString()}</Text>
+        )}
+      </View>
+    ));
   };
 
   return (
@@ -218,7 +226,8 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         source={{ html: "<html><body></body></html>" }}
         onLoad={() => {
           if (!webViewLoaded) {
-            webViewRef.current.injectJavaScript(loadAndProcessImage);
+            const script = loadBase64andSendPixelsScript(base64image);
+            webViewRef.current.injectJavaScript(script);
             webViewLoaded = true;
           }
         }}
@@ -228,7 +237,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         <ImageBackground
           source={{
             uri: image.uri,
-            // `data:image/jpeg;base64,${base64image}`,
           }}
           style={{
             width: screenWidth,
@@ -253,7 +261,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
             <Image
               source={{
                 uri: image.uri,
-                // `data:image/jpeg;base64,${base64image}`,
               }}
               style={{
                 width: screenWidth / 2,
@@ -261,26 +268,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
               }}
             />
           </TouchableOpacity>
-          {keys &&
-            keys.map((key, i) => {
-              return (
-                <View key={i} style={styles.detailsContainer}>
-                  <Text style={{ marginLeft: "10%" }}>{key}: </Text>
-                  {key !== "date" ? (
-                    <TextInput
-                      value={thisImageDetails[key]}
-                      onChangeText={(value) => onDetailsTextChange(key, value)}
-                      autoCapitalize="sentences"
-                      style={styles.input}
-                    />
-                  ) : (
-                    <Text style={styles.input}>
-                      {date.toLocaleDateString()}
-                    </Text>
-                  )}
-                </View>
-              );
-            })}
+          {keys && renderDetails()}
         </ScrollView>
       )}
       <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>

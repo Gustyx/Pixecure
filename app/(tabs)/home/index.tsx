@@ -10,7 +10,7 @@ import {
   Text,
   FlatList,
 } from "react-native";
-import { Stack, useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import useAuth from "../../hooks/useAuth";
 import withAuthentication from "../../hocs/withAuthentication";
 import { arrayRemove, doc, getDoc, updateDoc } from "firebase/firestore";
@@ -50,8 +50,6 @@ const HomePage = () => {
     categorizedImages: {},
     imageKeys: [],
   });
-  // const [categorizedImages, setCategorizedImages] = useState<{}>({});
-  // const [imageKeys, setImageKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
   const [rerenderAfterDecryption, setRerenderAfterDecryption] = useState(false);
