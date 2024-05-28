@@ -28,7 +28,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
 
 let selectedDate: Date;
-let imageScale = 1;
+let imageScale = 4 / 3;
 let base64image;
 let webViewLoaded = false;
 
@@ -37,10 +37,9 @@ const Inspect = () => {
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
-  const [firstBase64image, setFirstBase64image] = useState("");
   const [decryptedBase64, setDecryptedBase64] = useState<string>("");
   const params = useLocalSearchParams();
-  const url = Array.isArray(params.id) ? params.id[0] : params.id;
+  const imageUrl = Array.isArray(params.id) ? params.id[0] : params.id;
   const webViewRef = useRef(null);
 
   const loadBase64andSendPixelsScript = (base64string) => {
@@ -63,18 +62,18 @@ const Inspect = () => {
     return script;
   };
 
-  const loadPixelsAndSendBase64Script = (base64string, pixels) => {
+  const loadPixelsAndSendBase64Script = (oldBase64string, newPixels) => {
     const script = `
     (function() {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
-      img.src = 'data:image/jpeg;base64,${base64string}';
+      img.src = 'data:image/jpeg;base64,${oldBase64string}';
       img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
         const imageData = ctx.createImageData(img.width, img.height);
-        const pixelData = ${pixels};
+        const pixelData = ${newPixels};
         for (let i = 0; i < pixelData.length - 1; i++) {
           imageData.data[i] = pixelData[i];
         }
@@ -91,7 +90,7 @@ const Inspect = () => {
     const fetchImageSize = async () => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
-          url,
+          imageUrl,
           [{ resize: { width: 500 } }],
           {
             // format: ImageManipulator.SaveFormat.JPEG,
@@ -103,8 +102,6 @@ const Inspect = () => {
         if (webViewLoaded) {
           const script = loadBase64andSendPixelsScript(base64image);
           webViewRef.current.injectJavaScript(script);
-        } else {
-          setFirstBase64image(base64image);
         }
       } catch (error) {
         console.error("Error getting image size:", error);
@@ -113,7 +110,7 @@ const Inspect = () => {
 
     const getImageMetadata = () => {
       try {
-        const ref = getImageRef(url);
+        const ref = getImageRef(imageUrl);
         getMetadata(ref)
           .then((metadata) => {
             setThisImageDetails(
@@ -176,7 +173,7 @@ const Inspect = () => {
 
   const updateImageMetadata = async () => {
     if (!displayDetails) setDisplayDetails(true);
-    else if (url) {
+    else if (imageUrl) {
       const newMetadata = {
         customMetadata: {
           ...thisImageDetails,
@@ -196,14 +193,15 @@ const Inspect = () => {
         });
         await updateDoc(userRef, {
           images: arrayUnion({
-            url: url,
+            url: imageUrl,
             smallUrl: params.smallUrl,
             pose: thisImageDetails.pose,
             date: date,
           }),
         });
       }
-      updateMetadata(getImageRef(url), newMetadata)
+      const ref = getImageRef(imageUrl);
+      updateMetadata(ref, newMetadata)
         .then((metadata) => {
           Alert.alert("New Details saved.");
           console.log("Metadata saved:", metadata.customMetadata);
@@ -228,7 +226,7 @@ const Inspect = () => {
           }}
           onLoad={() => {
             if (!webViewLoaded) {
-              const script = loadBase64andSendPixelsScript(firstBase64image);
+              const script = loadBase64andSendPixelsScript(base64image);
               webViewRef.current.injectJavaScript(script);
               webViewLoaded = true;
             }

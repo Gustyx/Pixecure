@@ -41,9 +41,9 @@ let imagesByDate = {};
 let poseKeys = [];
 let dateKeys = [];
 let webViewLoaded = false;
-let base64strings = [];
+let base64images = [];
 let smallUrls = [];
-let decryptedBase64strings = [];
+let decryptedBase64images = [];
 
 const HomePage = () => {
   const [imageState, setImageState] = useState({
@@ -81,18 +81,18 @@ const HomePage = () => {
     return script;
   };
 
-  const loadPixelsAndSendBase64Script = (base64string, pixels) => {
+  const loadPixelsAndSendBase64Script = (oldBase64string, newPixels) => {
     const script = `
     (function() {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
-      img.src = 'data:image/jpeg;base64,${base64string}';
+      img.src = 'data:image/jpeg;base64,${oldBase64string}';
       img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
         const imageData = ctx.createImageData(img.width, img.height);
-        const pixelData = ${pixels};
+        const pixelData = ${newPixels};
         for (let i = 0; i < pixelData.length - 1; i++) {
           imageData.data[i] = pixelData[i];
         }
@@ -134,14 +134,14 @@ const HomePage = () => {
                 }
               );
               if (!webViewLoaded) {
-                base64strings.push(manipResult.base64);
+                base64images.push(manipResult.base64);
                 smallUrls.push(image.smallUrl);
-              } else if (base64strings.indexOf(manipResult.base64) === -1) {
-                base64strings.push(manipResult.base64);
+              } else if (base64images.indexOf(manipResult.base64) === -1) {
+                base64images.push(manipResult.base64);
                 smallUrls.push(image.smallUrl);
                 const script = loadBase64andSendPixelsScript(
                   manipResult.base64,
-                  base64strings.length - 1
+                  base64images.length - 1
                 );
                 webViewRef.current.injectJavaScript(script);
               }
@@ -219,14 +219,14 @@ const HomePage = () => {
       smallUrl: encodeURIComponent(image.smallUrl),
       pose: image.pose,
       date: image.date,
-      decryptedSmallUrl: decryptedBase64strings[index],
+      decryptedSmallUrl: decryptedBase64images[index],
     };
     router.push({ pathname: `/home/${imageUrl}`, params: param });
   };
 
   const deleteImage = async (image, index) => {
-    decryptedBase64strings.splice(index, 1);
-    base64strings.splice(index, 1);
+    decryptedBase64images.splice(index, 1);
+    base64images.splice(index, 1);
     smallUrls.splice(index, 1);
     const imageRef = getImageRef(image.url);
     const smallImageRef = getSmallImageRef(image.smallUrl);
@@ -280,7 +280,7 @@ const HomePage = () => {
     if (webViewMessage[0] != "/") {
       getDecryptedImageUrl(webViewMessage);
     } else {
-      decryptedBase64strings.push(webViewMessage);
+      decryptedBase64images.push(webViewMessage);
     }
     // if (decryptedBase64strings.length == base64strings.length) {
     setRerenderAfterDecryption(!rerenderAfterDecryption);
@@ -296,7 +296,7 @@ const HomePage = () => {
     }
     const newPixelData = JSON.stringify(newPixels);
     const script = loadPixelsAndSendBase64Script(
-      base64strings[webViewMessage[webViewMessage.length - 1]],
+      base64images[webViewMessage[webViewMessage.length - 1]],
       newPixelData
     );
     webViewRef.current.injectJavaScript(script);
@@ -320,7 +320,7 @@ const HomePage = () => {
         <Image
           source={{
             uri: `data:image/jpeg;base64,${
-              decryptedBase64strings[smallUrls.indexOf(item.smallUrl)]
+              decryptedBase64images[smallUrls.indexOf(item.smallUrl)]
             }`,
           }}
           style={styles.image}
@@ -398,7 +398,7 @@ const HomePage = () => {
         }}
         onLoad={() => {
           if (!webViewLoaded) {
-            runScriptOnAllStrings(base64strings);
+            runScriptOnAllStrings(base64images);
             webViewLoaded = true;
           }
         }}
