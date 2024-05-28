@@ -171,12 +171,8 @@ const HomePage = () => {
             dateKeys = dKeys;
             if (key === "Pose") {
               updateImageState(categorizedImagesByPose, poseKeys);
-              // setCategorizedImages(categorizedImagesByPose);
-              // setImageKeys(poseKeys);
             } else {
               updateImageState(categorizedImagesByDate, dateKeys);
-              // setCategorizedImages(categorizedImagesByDate);
-              // setImageKeys(dateKeys);
             }
           } else {
             console.log("No such document!");
@@ -207,12 +203,8 @@ const HomePage = () => {
       key = newKey;
       if (newKey === "Pose") {
         updateImageState(imagesByPose, poseKeys);
-        // setImageKeys(poseKeys);
-        // setCategorizedImages(imagesByPose);
       } else {
         updateImageState(imagesByDate, dateKeys);
-        // setImageKeys(dateKeys);
-        // setCategorizedImages(imagesByDate);
       }
     } catch (error) {
       console.error("Failed to save sorting key:", error);
@@ -269,27 +261,6 @@ const HomePage = () => {
     imagesByDate[image.date] = imagesByDate[image.date].filter(
       (item) => !(item.url === image.url)
     );
-    // let newImagesByPose = { ...imagesByPose };
-    // newImagesByPose[image.pose] = newImagesByPose[image.pose].filter(
-    //   (item) =>
-    //     !(
-    //       item.url === image.url &&
-    //       item.pose === image.pose &&
-    //       item.date === image.date
-    //     )
-    // );
-    // let newImagesByDate = { ...imagesByDate };
-    // newImagesByDate[image.date] = newImagesByDate[image.date].filter(
-    //   (item) =>
-    //     !(
-    //       item.url === image.url &&
-    //       item.pose === image.pose &&
-    //       item.date === image.date
-    //     )
-    // );
-    // imagesByPose = newImagesByPose;
-    // imagesByDate = newImagesByDate;
-
     if (imagesByPose[image.pose].length === 0) {
       poseKeys = poseKeys.filter((item) => item !== image.pose);
     }
@@ -299,12 +270,8 @@ const HomePage = () => {
 
     if (key === "Pose") {
       updateImageState(imagesByPose, poseKeys);
-      // setCategorizedImages(newImagesByPose);
-      // setImageKeys(poseKeys);
     } else {
       updateImageState(imagesByDate, dateKeys);
-      // setCategorizedImages(newImagesByDate);
-      // setImageKeys(dateKeys);
     }
   };
 
@@ -315,7 +282,7 @@ const HomePage = () => {
     } else {
       decryptedBase64strings.push(webViewMessage);
     }
-    // if (decryptedBase64strings.length == base64strings.length / 2) {
+    // if (decryptedBase64strings.length == base64strings.length) {
     setRerenderAfterDecryption(!rerenderAfterDecryption);
     // }
   };
