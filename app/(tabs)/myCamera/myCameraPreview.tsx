@@ -67,7 +67,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           image.uri,
-          [{ resize: { width: 200 } }],
+          [{ resize: { width: 500 } }],
           {
             // format: ImageManipulator.SaveFormat.JPEG,
             base64: true,
@@ -92,7 +92,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           })();
         `;
           webViewRef.current.injectJavaScript(loadAndProcessImageFaster);
-          console.log(2);
         } else {
           setFirstBase64image(base64image);
         }
@@ -221,9 +220,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           if (!webViewLoaded) {
             webViewRef.current.injectJavaScript(loadAndProcessImage);
             webViewLoaded = true;
-            console.log(1);
           }
-          // webViewRef.current.injectJavaScript(loadAndProcessImage);
         }}
         style={{ flex: 0 }}
       />

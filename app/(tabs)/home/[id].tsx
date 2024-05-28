@@ -66,7 +66,7 @@ const Inspect = () => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           url,
-          [{ resize: { width: 200 } }],
+          [{ resize: { width: 500 } }],
           {
             // format: ImageManipulator.SaveFormat.JPEG,
             base64: true,
@@ -237,7 +237,6 @@ const Inspect = () => {
             if (!webViewLoaded) {
               webViewRef.current.injectJavaScript(loadAndProcessImage);
               webViewLoaded = true;
-              console.log(33);
             }
           }}
           style={{ flex: 0 }}
