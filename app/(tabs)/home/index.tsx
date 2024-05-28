@@ -42,6 +42,7 @@ let poseKeys = [];
 let dateKeys = [];
 let webViewLoaded = false;
 let base64strings = [];
+let smallUrls = [];
 let decryptedBase64strings = [];
 
 const HomePage = () => {
@@ -133,9 +134,11 @@ const HomePage = () => {
                 }
               );
               if (!webViewLoaded) {
-                base64strings.push(image.smallUrl, manipResult.base64);
+                base64strings.push(manipResult.base64);
+                smallUrls.push(image.smallUrl);
               } else if (base64strings.indexOf(manipResult.base64) === -1) {
-                base64strings.push(image.smallUrl, manipResult.base64);
+                base64strings.push(manipResult.base64);
+                smallUrls.push(image.smallUrl);
                 const script = loadBase64andSendPixelsScript(
                   manipResult.base64,
                   base64strings.length - 1
@@ -231,7 +234,8 @@ const HomePage = () => {
 
   const deleteImage = async (image, index) => {
     decryptedBase64strings.splice(index, 1);
-    base64strings.splice(index * 2, 2);
+    base64strings.splice(index, 1);
+    smallUrls.splice(index, 1);
     const imageRef = getImageRef(image.url);
     const smallImageRef = getSmallImageRef(image.smallUrl);
     deleteObject(imageRef)
@@ -332,7 +336,7 @@ const HomePage = () => {
   };
 
   const runScriptOnAllStrings = (strings) => {
-    for (let i = 1; i < strings.length; i += 2) {
+    for (let i = 0; i < strings.length; i++) {
       const script = loadBase64andSendPixelsScript(strings[i], i);
       webViewRef.current.injectJavaScript(script);
     }
@@ -343,17 +347,13 @@ const HomePage = () => {
       <TouchableOpacity
         style={styles.imageWrapper}
         key={`${item}-${index}`}
-        onPress={() =>
-          inspectImage(item, base64strings.indexOf(item.smallUrl) / 2)
-        }
-        onLongPress={() =>
-          deleteImage(item, base64strings.indexOf(item.smallUrl) / 2)
-        }
+        onPress={() => inspectImage(item, smallUrls.indexOf(item.smallUrl))}
+        onLongPress={() => deleteImage(item, smallUrls.indexOf(item.smallUrl))}
       >
         <Image
           source={{
             uri: `data:image/jpeg;base64,${
-              decryptedBase64strings[base64strings.indexOf(item.smallUrl) / 2]
+              decryptedBase64strings[smallUrls.indexOf(item.smallUrl)]
             }`,
           }}
           style={styles.image}
