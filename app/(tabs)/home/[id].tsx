@@ -66,31 +66,31 @@ const Inspect = () => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           url,
-          [{ resize: { width: 100 } }],
+          [{ resize: { width: 200 } }],
           {
             // format: ImageManipulator.SaveFormat.JPEG,
             base64: true,
           }
         );
         imageScale = manipResult.height / manipResult.width;
-        const loadAndProcessImageFaster = `
-        (function() {
-          const img = new Image();
-          img.src = 'data:image/jpeg;base64,${manipResult.base64}';
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const imageData = ctx.getImageData(0, 0, img.width, img.height);
-            const pixelData = Array.from(imageData.data);
-            window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-          };
-        })();
-      `;
         base64image = manipResult.base64;
         if (webViewLoaded) {
+          const loadAndProcessImageFaster = `
+          (function() {
+            const img = new Image();
+            img.src = 'data:image/jpeg;base64,${manipResult.base64}';
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              const imageData = ctx.getImageData(0, 0, img.width, img.height);
+              const pixelData = Array.from(imageData.data);
+              window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+            };
+          })();
+        `;
           webViewRef.current.injectJavaScript(loadAndProcessImageFaster);
         } else {
           setFirstBase64image(base64image);
@@ -213,7 +213,7 @@ const Inspect = () => {
       updateMetadata(getImageRef(url), newMetadata)
         .then((metadata) => {
           Alert.alert("New Details saved.");
-          console.log("Metadata saved:", metadata.customMetadata);
+          // console.log("Metadata saved:", metadata.customMetadata);
         })
         .catch((error) => {
           Alert.alert("Could not update details.");

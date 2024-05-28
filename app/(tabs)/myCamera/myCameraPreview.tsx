@@ -28,11 +28,14 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
 import * as FileSystem from "expo-file-system";
 
+let webViewLoaded = false;
+let base64image;
+
 const MyCameraPreview = ({ onExitPreview, image }) => {
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
-  const [base64image, setBase64image] = useState<string>("");
+  const [firstBase64image, setFirstBase64image] = useState<string>("");
   const [pixels, setPixels] = useState<number[]>([]);
   const webViewRef = useRef(null);
 
@@ -41,7 +44,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   const loadAndProcessImage = `
   (function() {
     const img = new Image();
-    img.src = 'data:image/jpeg;base64,${base64image}';
+    img.src = 'data:image/jpeg;base64,${firstBase64image}';
     img.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = img.width;
@@ -64,17 +67,40 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           image.uri,
-          [{ resize: { width: 500 } }],
+          [{ resize: { width: 200 } }],
           {
             // format: ImageManipulator.SaveFormat.JPEG,
             base64: true,
           }
         );
-        setBase64image(manipResult.base64);
+        base64image = manipResult.base64;
+        if (webViewLoaded) {
+          const loadAndProcessImageFaster = `
+          (function() {
+            const img = new Image();
+            img.src = 'data:image/jpeg;base64,${manipResult.base64}';
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              const imageData = ctx.getImageData(0, 0, img.width, img.height);
+              const pixelData = Array.from(imageData.data);
+              window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+            };
+          })();
+        `;
+          webViewRef.current.injectJavaScript(loadAndProcessImageFaster);
+          console.log(2);
+        } else {
+          setFirstBase64image(base64image);
+        }
       } catch (error) {
         console.error("Error getting image size:", error);
       }
     };
+
     fetchImageSize();
   }, []);
 
@@ -101,6 +127,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       customMetadata: { ...thisImageDetails },
     };
     // setBase64image(webViewMessage);
+    // console.log(webViewMessage);
     const fileUri = `${FileSystem.documentDirectory}temp_image.jpg`;
     await FileSystem.writeAsStringAsync(fileUri, webViewMessage, {
       encoding: FileSystem.EncodingType.Base64,
@@ -191,7 +218,12 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         originWhitelist={["*"]}
         source={{ html: "<html><body></body></html>" }}
         onLoad={() => {
-          webViewRef.current.injectJavaScript(loadAndProcessImage);
+          if (!webViewLoaded) {
+            webViewRef.current.injectJavaScript(loadAndProcessImage);
+            webViewLoaded = true;
+            console.log(1);
+          }
+          // webViewRef.current.injectJavaScript(loadAndProcessImage);
         }}
         style={{ flex: 0 }}
       />

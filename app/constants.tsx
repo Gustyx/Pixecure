@@ -50,3 +50,11 @@ export const getImageRef = (imageUrl) => {
   const imageRef = ref(storage, imageFolderPath + imageId);
   return imageRef;
 };
+export const getSmallImageRef = (imageUrl) => {
+  const encodedPath = encodeURIComponent(smallImageFolderPath);
+  const startIndex = imageUrl.indexOf(encodedPath) + encodedPath.length;
+  const endIndex = imageUrl.indexOf("?alt=media");
+  const imageId = imageUrl.substring(startIndex, endIndex);
+  const imageRef = ref(storage, smallImageFolderPath + imageId);
+  return imageRef;
+};
