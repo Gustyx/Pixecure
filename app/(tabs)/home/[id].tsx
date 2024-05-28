@@ -213,6 +213,46 @@ const Inspect = () => {
     }
   };
 
+  const renderDetails = () => {
+    return keys.map((key, i) => (
+      <View key={i} style={styles.detailsContainer}>
+        <Text style={{ marginLeft: "10%" }}>{key}: </Text>
+        {key !== "date" ? (
+          <TextInput
+            value={thisImageDetails[key]}
+            onChangeText={(value) => onDetailsTextChange(key, value)}
+            autoCapitalize="sentences"
+            style={styles.input}
+          />
+        ) : (
+          <TouchableOpacity
+            onPress={() => {
+              setShowCalendar(true);
+            }}
+            style={styles.input}
+          >
+            <Text style={{ color: "white" }}>{thisImageDetails["date"]}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    ));
+  };
+
+  const renderImage = (imageStyle) => {
+    return (
+      <ImageBackground
+        source={{
+          uri: decryptedBase64
+            ? `data:image/jpeg;base64,${decryptedBase64}`
+            : `data:image/jpeg;base64,${params.decryptedSmallUrl}`,
+        }}
+        style={imageStyle}
+      >
+        {!decryptedBase64 && <ActivityIndicator size="large" />}
+      </ImageBackground>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerTitle: "Inspect Page" }} />
@@ -235,20 +275,7 @@ const Inspect = () => {
         />
       )}
       {!displayDetails ? (
-        <ImageBackground
-          source={{
-            uri: decryptedBase64
-              ? `data:image/jpeg;base64,${decryptedBase64}`
-              : `data:image/jpeg;base64,${params.decryptedSmallUrl}`,
-          }}
-          style={{
-            width: screenWidth,
-            height: screenWidth * imageScale,
-            justifyContent: "center",
-          }}
-        >
-          {!decryptedBase64 && <ActivityIndicator size="large" />}
-        </ImageBackground>
+        renderImage(styles.bigImage)
       ) : (
         <ScrollView
           style={{
@@ -263,48 +290,9 @@ const Inspect = () => {
               marginBottom: "10%",
             }}
           >
-            <ImageBackground
-              source={{
-                uri: decryptedBase64
-                  ? `data:image/jpeg;base64,${decryptedBase64}`
-                  : `data:image/jpeg;base64,${params.decryptedSmallUrl}`,
-              }}
-              style={{
-                width: screenWidth / 2,
-                height: (screenWidth / 2) * imageScale,
-                justifyContent: "center",
-              }}
-            >
-              {!decryptedBase64 && <ActivityIndicator size="large" />}
-            </ImageBackground>
+            {renderImage(styles.smallImage)}
           </TouchableOpacity>
-          {keys &&
-            keys.map((key, i) => {
-              return (
-                <View key={i} style={styles.detailsContainer}>
-                  <Text style={{ marginLeft: "10%" }}>{key}: </Text>
-                  {key !== "date" ? (
-                    <TextInput
-                      value={thisImageDetails[key]}
-                      onChangeText={(value) => onDetailsTextChange(key, value)}
-                      autoCapitalize="sentences"
-                      style={styles.input}
-                    />
-                  ) : (
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowCalendar(true);
-                      }}
-                      style={styles.input}
-                    >
-                      <Text style={{ color: "white" }}>
-                        {thisImageDetails["date"]}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              );
-            })}
+          {keys && renderDetails()}
           {showCalendar && (
             <DateTimePicker
               testID="dateTimePicker"
@@ -334,6 +322,16 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     flexDirection: "row",
     position: "relative",
+    justifyContent: "center",
+  },
+  bigImage: {
+    width: screenWidth,
+    height: screenWidth * imageScale,
+    justifyContent: "center",
+  },
+  smallImage: {
+    width: screenWidth / 2,
+    height: (screenWidth / 2) * imageScale,
     justifyContent: "center",
   },
   detailsContainer: {
