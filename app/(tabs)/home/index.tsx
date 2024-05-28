@@ -43,7 +43,6 @@ let dateKeys = [];
 let webViewLoaded = false;
 let base64strings = [];
 let decryptedBase64strings = [];
-let p = 0;
 
 const HomePage = () => {
   const [imageState, setImageState] = useState({
@@ -54,19 +53,55 @@ const HomePage = () => {
   // const [imageKeys, setImageKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
-  const [decryptionReady, setDecryptionReady] = useState(false);
+  const [rerenderAfterDecryption, setRerenderAfterDecryption] = useState(false);
   const user = useAuth();
   const router = useRouter();
   const navigation = useNavigation();
   const webViewRef = useRef(null);
 
-  console.log("rerender", p++);
+  const loadBase64andSendPixelsScript = (base64string, index) => {
+    const script = `
+    (function() {
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,${base64string}';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const pixelData = Array.from(imageData.data);
+        pixelData.push(${index})
+        window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+      };
+    })();
+  `;
+    return script;
+  };
 
-  const updateImageState = (newCategorizedImages, newImageKeys) => {
-    setImageState({
-      categorizedImages: newCategorizedImages,
-      imageKeys: newImageKeys,
-    });
+  const loadPixelsAndSendBase64Script = (base64string, pixels) => {
+    const script = `
+    (function() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,${base64string}';
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const imageData = ctx.createImageData(img.width, img.height);
+        const pixelData = ${pixels};
+        for (let i = 0; i < pixelData.length - 1; i++) {
+          imageData.data[i] = pixelData[i];
+        }
+        ctx.putImageData(imageData, 0, 0);
+        const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
+        window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
+      };
+    })();
+  `;
+    return script;
   };
 
   useFocusEffect(
@@ -101,26 +136,11 @@ const HomePage = () => {
                 base64strings.push(image.smallUrl, manipResult.base64);
               } else if (base64strings.indexOf(manipResult.base64) === -1) {
                 base64strings.push(image.smallUrl, manipResult.base64);
-                const loadBase64andSendPixelsFaster = `
-                (function() {
-                  const img = new Image();
-                  img.src = 'data:image/jpeg;base64,${manipResult.base64}';
-                  img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    const imageData = ctx.getImageData(0, 0, img.width, img.height);
-                    const pixelData = Array.from(imageData.data);
-                    pixelData.push(${base64strings.length - 1})
-                    window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-                  };
-                })();
-              `;
-                webViewRef.current.injectJavaScript(
-                  loadBase64andSendPixelsFaster
+                const script = loadBase64andSendPixelsScript(
+                  manipResult.base64,
+                  base64strings.length - 1
                 );
+                webViewRef.current.injectJavaScript(script);
               }
             }
             const pKeys = Object.keys(categorizedImagesByPose);
@@ -169,6 +189,12 @@ const HomePage = () => {
     }, [])
   );
 
+  const updateImageState = (newCategorizedImages, newImageKeys) => {
+    setImageState({
+      categorizedImages: newCategorizedImages,
+      imageKeys: newImageKeys,
+    });
+  };
   const openMenu = () => setMenuVisible(true);
   const closeMenu = () => setMenuVisible(false);
 
@@ -278,6 +304,40 @@ const HomePage = () => {
     }
   };
 
+  const onMessage = async (event) => {
+    const webViewMessage = JSON.parse(event.nativeEvent.data);
+    if (webViewMessage[0] != "/") {
+      getDecryptedImageUrl(webViewMessage);
+    } else {
+      decryptedBase64strings.push(webViewMessage);
+    }
+    // if (decryptedBase64strings.length == base64strings.length / 2) {
+    setRerenderAfterDecryption(!rerenderAfterDecryption);
+    // }
+  };
+
+  const getDecryptedImageUrl = (webViewMessage) => {
+    let newPixels = webViewMessage;
+    for (let i = 0; i < newPixels.length - 1; i += 4) {
+      newPixels[i] = 255 - newPixels[i]; // Invert Red
+      newPixels[i + 1] = 255 - newPixels[i + 1]; // Invert Green
+      newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
+    }
+    const newPixelData = JSON.stringify(newPixels);
+    const script = loadPixelsAndSendBase64Script(
+      base64strings[webViewMessage[webViewMessage.length - 1]],
+      newPixelData
+    );
+    webViewRef.current.injectJavaScript(script);
+  };
+
+  const runScriptOnAllStrings = (strings) => {
+    for (let i = 1; i < strings.length; i += 2) {
+      const script = loadBase64andSendPixelsScript(strings[i], i);
+      webViewRef.current.injectJavaScript(script);
+    }
+  };
+
   const renderImage = useCallback(({ item, index }) => {
     const render = (
       <TouchableOpacity
@@ -360,80 +420,6 @@ const HomePage = () => {
     );
   }
 
-  const onMessage = async (event) => {
-    const webViewMessage = JSON.parse(event.nativeEvent.data);
-    if (webViewMessage[0] != "/") {
-      getDecryptedImageUrl(webViewMessage);
-    } else {
-      decryptedBase64strings.push(webViewMessage);
-    }
-    // let i = 0;
-    // for (const key of Object.keys(categorizedImages)) {
-    //   for (const val of categorizedImages[key]) {
-    //     i++;
-    //   }
-    // }
-    // if (decryptedBase64strings.length == i) {
-    setDecryptionReady(!decryptionReady);
-    // }
-  };
-
-  const getDecryptedImageUrl = (webViewMessage) => {
-    let newPixels = webViewMessage;
-    for (let i = 0; i < newPixels.length - 1; i += 4) {
-      newPixels[i] = 255 - newPixels[i]; // Invert Red
-      newPixels[i + 1] = 255 - newPixels[i + 1]; // Invert Green
-      newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
-    }
-    const newPixelData = JSON.stringify(newPixels);
-    const loadPixelsAndSendBase64 = `
-    (function() {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.src = 'data:image/jpeg;base64,${
-        base64strings[webViewMessage[webViewMessage.length - 1]]
-      }';
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const imageData = ctx.createImageData(img.width, img.height);
-        const pixelData = ${newPixelData};
-        for (let i = 0; i < pixelData.length - 1; i++) {
-          imageData.data[i] = pixelData[i];
-        }
-        ctx.putImageData(imageData, 0, 0);
-        const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
-        window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
-      };
-    })();
-  `;
-    webViewRef.current.injectJavaScript(loadPixelsAndSendBase64);
-  };
-
-  const script = (strings) => {
-    for (let i = 1; i < strings.length; i += 2) {
-      const loadBase64andSendPixels = `
-      (function() {
-        const img = new Image();
-        img.src = 'data:image/jpeg;base64,${strings[i]}';
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          const imageData = ctx.getImageData(0, 0, img.width, img.height);
-          const pixelData = Array.from(imageData.data);
-          pixelData.push(${i})
-          window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-        };
-      })();
-    `;
-      webViewRef.current.injectJavaScript(loadBase64andSendPixels);
-    }
-  };
-
   return (
     <View style={styles.container}>
       <WebView
@@ -445,7 +431,7 @@ const HomePage = () => {
         }}
         onLoad={() => {
           if (!webViewLoaded) {
-            script(base64strings);
+            runScriptOnAllStrings(base64strings);
             webViewLoaded = true;
           }
         }}
