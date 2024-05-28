@@ -23,6 +23,8 @@ import {
   imageDetails,
   formatDate,
   smallImageFolderPath,
+  loadBase64andSendPixelsScript,
+  loadPixelsAndSendBase64Script,
 } from "../../constants";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
@@ -38,52 +40,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     useState<ImageDetails>(imageDetails);
   const [pixels, setPixels] = useState<number[]>([]);
   const webViewRef = useRef(null);
-
   const imageScale = image.height / image.width;
-
-  const loadBase64andSendPixelsScript = (base64string) => {
-    const script = `
-    (function() {
-      const img = new Image();
-      img.src = 'data:image/jpeg;base64,${base64string}';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, img.width, img.height);
-        const pixelData = Array.from(imageData.data);
-        window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-      };
-    })();
-  `;
-    return script;
-  };
-
-  const loadPixelsAndSendBase64Script = (oldBase64string, newPixels) => {
-    const script = `
-    (function() {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.src = 'data:image/jpeg;base64,${oldBase64string}';
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const imageData = ctx.createImageData(img.width, img.height);
-        const pixelData = ${newPixels};
-        for (let i = 0; i < pixelData.length - 1; i++) {
-          imageData.data[i] = pixelData[i];
-        }
-        ctx.putImageData(imageData, 0, 0);
-        const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
-        window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
-      };
-    })();
-  `;
-    return script;
-  };
 
   const closeCameraPreview = () => {
     onExitPreview();

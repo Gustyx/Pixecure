@@ -19,6 +19,8 @@ import { deleteObject } from "firebase/storage";
 import {
   getImageRef,
   getSmallImageRef,
+  loadBase64andSendPixelsScriptWithIndex,
+  loadPixelsAndSendBase64Script,
   months,
   screenWidth,
 } from "../../constants";
@@ -58,51 +60,6 @@ const HomePage = () => {
   const navigation = useNavigation();
   const webViewRef = useRef(null);
 
-  const loadBase64andSendPixelsScript = (base64string, index) => {
-    const script = `
-    (function() {
-      const img = new Image();
-      img.src = 'data:image/jpeg;base64,${base64string}';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, img.width, img.height);
-        const pixelData = Array.from(imageData.data);
-        pixelData.push(${index})
-        window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-      };
-    })();
-  `;
-    return script;
-  };
-
-  const loadPixelsAndSendBase64Script = (oldBase64string, newPixels) => {
-    const script = `
-    (function() {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.src = 'data:image/jpeg;base64,${oldBase64string}';
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const imageData = ctx.createImageData(img.width, img.height);
-        const pixelData = ${newPixels};
-        for (let i = 0; i < pixelData.length - 1; i++) {
-          imageData.data[i] = pixelData[i];
-        }
-        ctx.putImageData(imageData, 0, 0);
-        const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
-        window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
-      };
-    })();
-  `;
-    return script;
-  };
-
   useFocusEffect(
     React.useCallback(() => {
       const getImages = async () => {
@@ -137,7 +94,7 @@ const HomePage = () => {
               } else if (base64images.indexOf(manipResult.base64) === -1) {
                 base64images.push(manipResult.base64);
                 smallUrls.push(image.smallUrl);
-                const script = loadBase64andSendPixelsScript(
+                const script = loadBase64andSendPixelsScriptWithIndex(
                   manipResult.base64,
                   base64images.length - 1
                 );
@@ -302,7 +259,7 @@ const HomePage = () => {
 
   const runScriptOnAllStrings = (strings) => {
     for (let i = 0; i < strings.length; i++) {
-      const script = loadBase64andSendPixelsScript(strings[i], i);
+      const script = loadBase64andSendPixelsScriptWithIndex(strings[i], i);
       webViewRef.current.injectJavaScript(script);
     }
   };
