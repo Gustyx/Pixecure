@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
-  Image,
   Text,
   TouchableOpacity,
   ImageBackground,
@@ -242,87 +241,49 @@ const Inspect = () => {
         />
       )}
       {!displayDetails ? (
-        imageUrl ? (
-          <ImageBackground
-            source={{
-              uri:
-                // url
-                `data:image/jpeg;base64,${imageUrl}`,
-            }}
-            style={{
-              width: screenWidth,
-              height: screenWidth * imageScale,
-            }}
-          />
-        ) : (
-          <View
-            style={{
-              width: screenWidth,
-              height: (screenWidth * 4) / 3,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <ImageBackground
-              source={{
-                uri: `data:image/jpeg;base64,${params.decryptedSmallUrl}`,
-              }}
-              style={{
-                width: screenWidth,
-                height: screenWidth * imageScale,
-              }}
-            />
-            <ActivityIndicator
-              size="large"
-              style={{
-                position: "absolute",
-                alignSelf: "center",
-              }}
-            />
-          </View>
-        )
+        <ImageBackground
+          source={{
+            uri: imageUrl
+              ? `data:image/jpeg;base64,${imageUrl}`
+              : `data:image/jpeg;base64,${params.decryptedSmallUrl}`,
+          }}
+          style={{
+            width: screenWidth,
+            height: screenWidth * imageScale,
+            justifyContent: "center",
+          }}
+        >
+          {!imageUrl && <ActivityIndicator size="large" />}
+        </ImageBackground>
       ) : (
         <ScrollView
           style={{
             width: "100%",
           }}
         >
-          {imageUrl ? (
-            <TouchableOpacity
-              onPress={() => setDisplayDetails(false)}
-              style={{
-                alignSelf: "center",
-                marginTop: "5%",
-                marginBottom: "10%",
+          <TouchableOpacity
+            onPress={() => setDisplayDetails(false)}
+            style={{
+              alignSelf: "center",
+              marginTop: "5%",
+              marginBottom: "10%",
+            }}
+          >
+            <ImageBackground
+              source={{
+                uri: imageUrl
+                  ? `data:image/jpeg;base64,${imageUrl}`
+                  : `data:image/jpeg;base64,${params.decryptedSmallUrl}`,
               }}
-            >
-              <Image
-                source={{
-                  uri:
-                    //  url
-                    `data:image/jpeg;base64,${imageUrl}`,
-                }}
-                style={{
-                  width: screenWidth / 2,
-                  height: (screenWidth / 2) * imageScale,
-                }}
-              />
-            </TouchableOpacity>
-          ) : (
-            <View
               style={{
                 width: screenWidth / 2,
-                height: ((screenWidth / 2) * 4) / 3,
-                alignSelf: "center",
-                marginTop: "5%",
-                marginBottom: "10%",
+                height: (screenWidth / 2) * imageScale,
                 justifyContent: "center",
-                alignItems: "center",
               }}
             >
-              <ActivityIndicator size="large" />
-            </View>
-          )}
+              {!imageUrl && <ActivityIndicator size="large" />}
+            </ImageBackground>
+          </TouchableOpacity>
           {keys &&
             keys.map((key, i) => {
               return (
