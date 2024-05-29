@@ -22,10 +22,8 @@ const RegisterPage = () => {
   const router = useRouter();
 
   const mockCringe = () => {
-    console.log("intram?");
     signInWithEmailAndPassword(auth, "q@q.co", "123456")
       .then((userCredential) => {
-        console.log("am intrat");
         const user = userCredential.user;
         router.replace("/(tabs)/home");
       })
