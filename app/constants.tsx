@@ -77,7 +77,30 @@ export const loadBase64andSendPixelsScript = (base64string) => {
 `;
   return script;
 };
-export const loadPixelsAndSendBase64Script = (oldBase64string, newPixels) => {
+export const loadBase64andSendPixelsScriptWithIndex = (base64string, index) => {
+  const script = `
+    (function() {
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,${base64string}';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const pixelData = Array.from(imageData.data);
+        pixelData.push(${index})
+        window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
+      };
+    })();
+  `;
+  return script;
+};
+export const loadPixelsAndSendNewBase64Script = (
+  oldBase64string,
+  newPixels
+) => {
   const script = `
   (function() {
     const canvas = document.createElement('canvas');
@@ -98,25 +121,5 @@ export const loadPixelsAndSendBase64Script = (oldBase64string, newPixels) => {
     };
   })();
 `;
-  return script;
-};
-export const loadBase64andSendPixelsScriptWithIndex = (base64string, index) => {
-  const script = `
-    (function() {
-      const img = new Image();
-      img.src = 'data:image/jpeg;base64,${base64string}';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, img.width, img.height);
-        const pixelData = Array.from(imageData.data);
-        pixelData.push(${index})
-        window.ReactNativeWebView.postMessage(JSON.stringify(pixelData));
-      };
-    })();
-  `;
   return script;
 };

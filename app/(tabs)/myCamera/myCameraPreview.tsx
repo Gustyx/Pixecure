@@ -24,7 +24,7 @@ import {
   formatDate,
   smallImageFolderPath,
   loadBase64andSendPixelsScript,
-  loadPixelsAndSendBase64Script,
+  loadPixelsAndSendNewBase64Script,
 } from "../../constants";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
@@ -150,7 +150,10 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       }
 
       const newPixelData = JSON.stringify(newPixels);
-      const script = loadPixelsAndSendBase64Script(base64image, newPixelData);
+      const script = loadPixelsAndSendNewBase64Script(
+        base64image,
+        newPixelData
+      );
       webViewRef.current.injectJavaScript(script);
     }
   };

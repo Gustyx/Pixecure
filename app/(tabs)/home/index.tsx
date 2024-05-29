@@ -20,7 +20,7 @@ import {
   getImageRef,
   getSmallImageRef,
   loadBase64andSendPixelsScriptWithIndex,
-  loadPixelsAndSendBase64Script,
+  loadPixelsAndSendNewBase64Script,
   months,
   screenWidth,
 } from "../../constants";
@@ -237,9 +237,8 @@ const HomePage = () => {
     } else {
       decryptedBase64images.push(webViewMessage);
     }
-    // if (decryptedBase64strings.length == base64strings.length) {
     setRerenderAfterDecryption(!rerenderAfterDecryption);
-    // }
+    // if (decryptedBase64images.length == base64images.length) {}
   };
 
   const getDecryptedImageUrl = (webViewMessage) => {
@@ -250,7 +249,7 @@ const HomePage = () => {
       newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
     }
     const newPixelData = JSON.stringify(newPixels);
-    const script = loadPixelsAndSendBase64Script(
+    const script = loadPixelsAndSendNewBase64Script(
       base64images[webViewMessage[webViewMessage.length - 1]],
       newPixelData
     );

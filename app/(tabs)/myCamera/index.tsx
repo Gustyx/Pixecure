@@ -19,8 +19,6 @@ const MyCamera = () => {
   const [cameraType, setCameraType] = useState<number>(1);
   const [previewVisible, setPreviewVisible] = useState<boolean>(false);
   const [capturedImage, setCapturedImage] = useState<any>(null);
-  // const [cameraType, setCameraType] = useState(CameraType.back);
-  // const [hasPermission, setHasPermission] = useState(null);
   const isFocused = useIsFocused();
 
   useEffect(() => {
@@ -70,9 +68,6 @@ const MyCamera = () => {
 
   const switchCamera = () => {
     setCameraType((cameraType + 1) % 2);
-    // setCameraType((prevType) =>
-    //   prevType === CameraType.back ? CameraType.front : CameraType.back
-    // );
   };
 
   const handleExitCameraPreview = () => {

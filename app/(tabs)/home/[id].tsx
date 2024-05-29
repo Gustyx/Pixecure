@@ -22,7 +22,7 @@ import {
   formatDate,
   getImageRef,
   loadBase64andSendPixelsScript,
-  loadPixelsAndSendBase64Script,
+  loadPixelsAndSendNewBase64Script,
 } from "../../constants";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
@@ -111,7 +111,7 @@ const Inspect = () => {
       newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
     }
     const newPixelData = JSON.stringify(newPixels);
-    const script = loadPixelsAndSendBase64Script(base64image, newPixelData);
+    const script = loadPixelsAndSendNewBase64Script(base64image, newPixelData);
     webViewRef.current.injectJavaScript(script);
   };
 
