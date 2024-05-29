@@ -212,11 +212,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         >
           <TouchableOpacity
             onPress={() => setDisplayDetails(false)}
-            style={{
-              alignSelf: "center",
-              marginTop: "5%",
-              marginBottom: "10%",
-            }}
+            style={styles.smallImageButton}
           >
             <Image
               source={{
@@ -253,6 +249,25 @@ const styles = StyleSheet.create({
     position: "relative",
     justifyContent: "center",
   },
+  smallImageButton: {
+    alignSelf: "center",
+    marginTop: "5%",
+    marginBottom: "10%",
+  },
+  detailsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  input: {
+    marginVertical: 5,
+    width: (screenWidth * 66) / 200,
+    height: (screenHeight * 6.6) / 200,
+    backgroundColor: "black",
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    marginLeft: "10%",
+    color: "white",
+  },
   closeButton: {
     position: "absolute",
     backgroundColor: "black",
@@ -268,20 +283,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 20,
     color: "#fff",
-  },
-  detailsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  input: {
-    marginVertical: 5,
-    width: (screenWidth * 66) / 200,
-    height: (screenHeight * 6.6) / 200,
-    backgroundColor: "black",
-    borderRadius: 15,
-    paddingHorizontal: 10,
-    marginLeft: "10%",
-    color: "white",
   },
 });
 

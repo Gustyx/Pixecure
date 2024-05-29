@@ -10,11 +10,11 @@ import {
   TextInput,
   Alert,
   StyleSheet,
-  Dimensions,
 } from "react-native";
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
 import { addDoc, collection, doc, setDoc } from "firebase/firestore";
+import { screenHeight, screenWidth } from "./constants";
 
 const RegisterPage = () => {
   const [email, setEmail] = useState<string>("");
@@ -112,8 +112,8 @@ const styles = StyleSheet.create({
   },
   input: {
     marginVertical: 10,
-    width: (Dimensions.get("window").width * 66) / 100,
-    height: (Dimensions.get("window").height * 6.6) / 100,
+    width: (screenWidth * 66) / 100,
+    height: (screenHeight * 6.6) / 100,
     backgroundColor: "black",
     borderRadius: 15,
     paddingHorizontal: 10,
@@ -122,10 +122,9 @@ const styles = StyleSheet.create({
   signupButton: {
     backgroundColor: "black",
     marginTop: 20,
-    width: (Dimensions.get("window").width * 66) / 100,
-    height: (Dimensions.get("window").height * 7.5) / 100,
+    width: (screenWidth * 66) / 100,
+    height: (screenHeight * 7.5) / 100,
     borderRadius: 15,
-    // display: "flex",
     justifyContent: "center",
     alignItems: "center",
     margin: "auto",

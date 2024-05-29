@@ -84,35 +84,17 @@ const MyCamera = () => {
           image={capturedImage}
         />
       ) : (
-        <View
-          style={{
-            flexDirection: "column",
-            flexWrap: "wrap",
-            justifyContent: "flex-start",
-          }}
-        >
+        <View style={styles.cameraContainer}>
           {cameraActive ? (
             <Camera
-              style={{
-                width: screenWidth,
-                height: (screenWidth * 4) / 3,
-                alignSelf: "flex-start",
-              }}
+              style={styles.camera}
               type={cameraType}
               ref={(r) => {
                 camera = r;
               }}
             />
           ) : (
-            <View
-              style={{
-                width: screenWidth,
-                height: (screenWidth * 4) / 3,
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "black",
-              }}
-            >
+            <View style={styles.inactiveCameraContainer}>
               {cameraActive === null ? (
                 <ActivityIndicator size="large" />
               ) : (
@@ -120,7 +102,7 @@ const MyCamera = () => {
               )}
             </View>
           )}
-          <View style={styles.ButtonContainer}>
+          <View style={styles.buttonContainer}>
             <TouchableOpacity
               onPress={takePicture}
               style={styles.captureButton}
@@ -144,7 +126,24 @@ const styles = StyleSheet.create({
     position: "relative",
     justifyContent: "center",
   },
-  ButtonContainer: {
+  cameraContainer: {
+    flexDirection: "column",
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
+  },
+  camera: {
+    width: screenWidth,
+    height: (screenWidth * 4) / 3,
+    alignSelf: "flex-start",
+  },
+  inactiveCameraContainer: {
+    width: screenWidth,
+    height: (screenWidth * 4) / 3,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "black",
+  },
+  buttonContainer: {
     flex: 1,
     backgroundColor: "black",
     justifyContent: "center",

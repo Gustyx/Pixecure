@@ -19,6 +19,7 @@ import { deleteObject } from "firebase/storage";
 import {
   getImageRef,
   getSmallImageRef,
+  imagesPerRow,
   loadBase64andSendPixelsScriptWithIndex,
   loadPixelsAndSendNewBase64Script,
   months,
@@ -292,7 +293,7 @@ const HomePage = () => {
           data={imageState.categorizedImages[category]}
           renderItem={renderImage}
           keyExtractor={(item, index) => `${item}-${index}`}
-          numColumns={5}
+          numColumns={imagesPerRow}
           style={{
             flex: 1,
           }}
@@ -335,7 +336,7 @@ const HomePage = () => {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={styles.activityIndicator}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -368,13 +369,7 @@ const HomePage = () => {
           />
         </View>
       ) : (
-        <View
-          style={{
-            width: "100%",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <View style={styles.noImages}>
           <Text>No images to display.</Text>
         </View>
       )}
@@ -389,42 +384,30 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     flexDirection: "row",
   },
-  button: {
-    width: 130,
-    borderRadius: 4,
-    backgroundColor: "#14274e",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    height: 40,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  ImageContainer: {
-    width: "100%",
-  },
   categorySection: {
     // marginBottom: 20,
   },
   categoryTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    marginLeft: 10,
-    marginVertical: 10,
+    marginLeft: 5,
+    marginVertical: 5,
   },
   imageWrapper: {
     padding: 1,
   },
   image: {
-    width: screenWidth / 5 - 2,
-    height: (screenWidth / 5 - 2) * 1.5,
+    width: screenWidth / imagesPerRow - 2,
+    height: ((screenWidth / imagesPerRow - 2) * 4) / 3,
+  },
+  activityIndicator: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   noImages: {
-    // flex: 1,
-    // justifyContent: "center",
+    width: "100%",
+    justifyContent: "center",
     alignItems: "center",
   },
 });

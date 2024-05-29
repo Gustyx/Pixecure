@@ -242,11 +242,7 @@ const Inspect = () => {
         >
           <TouchableOpacity
             onPress={() => setDisplayDetails(false)}
-            style={{
-              alignSelf: "center",
-              marginTop: "5%",
-              marginBottom: "10%",
-            }}
+            style={styles.smallImageButton}
           >
             {renderImage(styles.smallImage)}
           </TouchableOpacity>
@@ -263,7 +259,7 @@ const Inspect = () => {
       )}
       <TouchableOpacity
         onPress={() => updateImageMetadata()}
-        style={styles.saveButton}
+        style={styles.editButton}
       >
         <Text style={styles.buttonText}>
           {!displayDetails ? "Details" : "Edit"}
@@ -292,19 +288,14 @@ const styles = StyleSheet.create({
     height: (screenWidth / 2) * imageScale,
     justifyContent: "center",
   },
+  smallImageButton: {
+    alignSelf: "center",
+    marginTop: "5%",
+    marginBottom: "10%",
+  },
   detailsContainer: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  saveButton: {
-    position: "absolute",
-    backgroundColor: "black",
-    bottom: "5%",
-    right: "5%",
-  },
-  buttonText: {
-    fontSize: 20,
-    color: "#fff",
   },
   input: {
     marginVertical: 5,
@@ -315,6 +306,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginLeft: "10%",
     color: "white",
+  },
+  editButton: {
+    position: "absolute",
+    backgroundColor: "black",
+    bottom: "5%",
+    right: "5%",
+  },
+  buttonText: {
+    fontSize: 20,
+    color: "#fff",
   },
 });
 
