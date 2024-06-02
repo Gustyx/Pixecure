@@ -1,9 +1,12 @@
 import React from "react";
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
+import { aes } from "./aes";
 
 const Home = () => {
   const router = useRouter();
+
+  aes("The quick brown ", "abcdefghijklmnop");
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

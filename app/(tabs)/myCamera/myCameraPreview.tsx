@@ -150,11 +150,12 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       }
 
       const newPixelData = JSON.stringify(newPixels);
-      const script = loadPixelsAndSendNewBase64Script(
-        base64image,
-        newPixelData
-      );
-      webViewRef.current.injectJavaScript(script);
+      // console.log(a);
+      // const script = loadPixelsAndSendNewBase64Script(
+      //   base64image,
+      //   newPixelData
+      // );
+      // webViewRef.current.injectJavaScript(script);
     }
   };
 

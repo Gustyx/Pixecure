@@ -59,16 +59,19 @@ export const getSmallImageRef = (imageUrl) => {
   const imageRef = ref(storage, smallImageFolderPath + imageId);
   return imageRef;
 };
+
+// img.src = 'data:image/jpeg;base64,${base64string}';
 export const loadBase64andSendPixelsScript = (base64string) => {
+  // console.log(base64string);
   const script = `
   (function() {
     const img = new Image();
-    img.src = 'data:image/jpeg;base64,${base64string}';
+    img.src = img.src = 'data:image/jpeg;base64,${base64string}';
     img.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = img.width;
       canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', {alpha: false});
       ctx.drawImage(img, 0, 0);
       const imageData = ctx.getImageData(0, 0, img.width, img.height);
       const pixelData = Array.from(imageData.data);
@@ -87,7 +90,7 @@ export const loadBase64andSendPixelsScriptWithIndex = (base64string, index) => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', {alpha: false});
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, img.width, img.height);
         const pixelData = Array.from(imageData.data);
@@ -105,7 +108,7 @@ export const loadPixelsAndSendNewBase64Script = (
   const script = `
   (function() {
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', {alpha: false});
     const img = new Image();
     img.src = 'data:image/jpeg;base64,${oldBase64string}';
     img.onload = () => {
