@@ -6,7 +6,11 @@ import { aes } from "./aes";
 const Home = () => {
   const router = useRouter();
 
-  aes("The quick brown ", "abcdefghijklmnop");
+  const pixels = [
+    84, 104, 101, 32, 113, 117, 105, 99, 107, 32, 98, 114, 111, 119, 110, 32,
+  ];
+  aes(pixels, "Thats my Kung Fu");
+  // aes("The quick brown ", "abcdefghijklmnop");
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

@@ -371,8 +371,7 @@ const mixColumns = (mat1, mat2) => {
       mixedBlock[i][j] = a.padStart(2, "0");
     }
   }
-  console.log("------------");
-  console.log(mixedBlock);
+
   return mixedBlock;
 };
 
@@ -442,6 +441,47 @@ const generateKeys = (key) => {
   return w;
 };
 
+const shiftRows = (hexBlock) => {
+  let newHexBlock = hexBlock.map((row) => [...row]);
+  for (let i = 1; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      newHexBlock[i][j] = hexBlock[i][(j + i) % 4];
+    }
+  }
+
+  return newHexBlock;
+};
+
+const subBytes = (hexBlock) => {
+  let newHexBlock = hexBlock.map((row) => [...row]);
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      const sBoxRow = hexCharToDecimal(hexBlock[i][j][0]);
+      const sBoxCol = hexCharToDecimal(hexBlock[i][j][1]);
+      const subByte = sBox[sBoxRow][sBoxCol];
+      //sub + shift
+      //   hexBlock[j][(i + 4 - j) % 4] = subByte;
+      newHexBlock[i][j] = subByte;
+    }
+  }
+
+  return newHexBlock;
+};
+
+const addRoundKey = (hexBlock, keys, round) => {
+  let newHexBlock = hexBlock.map((row) => [...row]);
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      newHexBlock[i][j] = xorHexValues(
+        hexBlock[i][j],
+        keys[j + round * 4][i]
+      ).padStart(2, "0");
+    }
+  }
+
+  return newHexBlock;
+};
+
 export const aes = (input, key) => {
   const keys = generateKeys(key);
 
@@ -453,25 +493,54 @@ export const aes = (input, key) => {
 
   for (let i = 0; i < 4; ++i) {
     for (let j = 0; j < 4; ++j) {
-      let inputToHex = input
-        .charCodeAt(i * 4 + j)
-        .toString(16)
-        .padStart(2, "0");
-      const sBoxRow = hexCharToDecimal(inputToHex[0]);
-      const sBoxCol = hexCharToDecimal(inputToHex[1]);
-      const subByte = sBox[sBoxRow][sBoxCol];
-      hexBlock[j][(i + 4 - j) % 4] = subByte;
+      let inputByteToHex = input[i * 4 + j].toString(16).padStart(2, "0");
+      //   const sBoxRow = hexCharToDecimal(inputToHex[0]);
+      //   const sBoxCol = hexCharToDecimal(inputToHex[1]);
+      //   const subByte = sBox[sBoxRow][sBoxCol];
+      //   hexBlock[j][i] = subByte;
+      //   //sub + shift
+      //   //   hexBlock[j][(i + 4 - j) % 4] = subByte;
+      hexBlock[j][i] = inputByteToHex;
     }
   }
+  console.log("round:", 0);
+  console.log("hex:", hexBlock);
+  hexBlock = addRoundKey(hexBlock, keys, 0);
+  console.log("add:", hexBlock);
 
-  console.log(hexBlock);
-  hexBlock = mixColumns(fixedMatrix, hexBlock);
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      const r = hexBlock[i][j];
-      hexBlock[i][j] = xorHexValues(hexBlock[i][j], keys[j][i]);
-      console.log(r, "^", keys[j][i], "=", hexBlock[i][j]);
+  for (let round = 1; round < 11; round++) {
+    console.log("round:", round);
+    hexBlock = subBytes(hexBlock);
+    console.log("sub:", hexBlock);
+
+    hexBlock = shiftRows(hexBlock);
+    console.log("sft:", hexBlock);
+
+    if (round < 10) {
+      hexBlock = mixColumns(fixedMatrix, hexBlock);
+      console.log("mix:", hexBlock);
+    }
+
+    hexBlock = addRoundKey(hexBlock, keys, round);
+    console.log("add:", hexBlock);
+
+    console.log();
+  }
+  console.log("cipher:", hexBlock);
+  let pixels = [];
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      pixels.push(parseInt(hexBlock[j][i], 16));
     }
   }
-  console.log(hexBlock);
+  console.log("input:", input);
+  console.log("encrypt:", pixels);
+  //   for (let i = 0; i < 4; i++) {
+  //     for (let j = 0; j < 4; j++) {
+  //       const r = hexBlock[i][j];
+  //       hexBlock[i][j] = xorHexValues(hexBlock[i][j], keys[j][i]);
+  //       //   console.log(r, "^", keys[j][i], "=", hexBlock[i][j]);
+  //     }
+  //   }
+  //   console.log(hexBlock);
 };
