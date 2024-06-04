@@ -1,306 +1,164 @@
-const sBox: string[][] = [
+import { keys } from "./constants";
+
+const sBox: number[][] = [
   [
-    "63",
-    "7c",
-    "77",
-    "7b",
-    "f2",
-    "6b",
-    "6f",
-    "c5",
-    "30",
-    "01",
-    "67",
-    "2b",
-    "fe",
-    "d7",
-    "ab",
-    "76",
+    0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
+    0xfe, 0xd7, 0xab, 0x76,
   ],
   [
-    "ca",
-    "82",
-    "c9",
-    "7d",
-    "fa",
-    "59",
-    "47",
-    "f0",
-    "ad",
-    "d4",
-    "a2",
-    "af",
-    "9c",
-    "a4",
-    "72",
-    "c0",
+    0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf,
+    0x9c, 0xa4, 0x72, 0xc0,
   ],
   [
-    "b7",
-    "fd",
-    "93",
-    "26",
-    "36",
-    "3f",
-    "f7",
-    "cc",
-    "34",
-    "a5",
-    "e5",
-    "f1",
-    "71",
-    "d8",
-    "31",
-    "15",
+    0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1,
+    0x71, 0xd8, 0x31, 0x15,
   ],
   [
-    "04",
-    "c7",
-    "23",
-    "c3",
-    "18",
-    "96",
-    "05",
-    "9a",
-    "07",
-    "12",
-    "80",
-    "e2",
-    "eb",
-    "27",
-    "b2",
-    "75",
+    0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, 0x07, 0x12, 0x80, 0xe2,
+    0xeb, 0x27, 0xb2, 0x75,
   ],
   [
-    "09",
-    "83",
-    "2c",
-    "1a",
-    "1b",
-    "6e",
-    "5a",
-    "a0",
-    "52",
-    "3b",
-    "d6",
-    "b3",
-    "29",
-    "e3",
-    "2f",
-    "84",
+    0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, 0x52, 0x3b, 0xd6, 0xb3,
+    0x29, 0xe3, 0x2f, 0x84,
   ],
   [
-    "53",
-    "d1",
-    "00",
-    "ed",
-    "20",
-    "fc",
-    "b1",
-    "5b",
-    "6a",
-    "cb",
-    "be",
-    "39",
-    "4a",
-    "4c",
-    "58",
-    "cf",
+    0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b, 0x6a, 0xcb, 0xbe, 0x39,
+    0x4a, 0x4c, 0x58, 0xcf,
   ],
   [
-    "d0",
-    "ef",
-    "aa",
-    "fb",
-    "43",
-    "4d",
-    "33",
-    "85",
-    "45",
-    "f9",
-    "02",
-    "7f",
-    "50",
-    "3c",
-    "9f",
-    "a8",
+    0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85, 0x45, 0xf9, 0x02, 0x7f,
+    0x50, 0x3c, 0x9f, 0xa8,
   ],
   [
-    "51",
-    "a3",
-    "40",
-    "8f",
-    "92",
-    "9d",
-    "38",
-    "f5",
-    "bc",
-    "b6",
-    "da",
-    "21",
-    "10",
-    "ff",
-    "f3",
-    "d2",
+    0x51, 0xa3, 0x40, 0x8f, 0x92, 0x9d, 0x38, 0xf5, 0xbc, 0xb6, 0xda, 0x21,
+    0x10, 0xff, 0xf3, 0xd2,
   ],
   [
-    "cd",
-    "0c",
-    "13",
-    "ec",
-    "5f",
-    "97",
-    "44",
-    "17",
-    "c4",
-    "a7",
-    "7e",
-    "3d",
-    "64",
-    "5d",
-    "19",
-    "73",
+    0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, 0xc4, 0xa7, 0x7e, 0x3d,
+    0x64, 0x5d, 0x19, 0x73,
   ],
   [
-    "60",
-    "81",
-    "4f",
-    "dc",
-    "22",
-    "2a",
-    "90",
-    "88",
-    "46",
-    "ee",
-    "b8",
-    "14",
-    "de",
-    "5e",
-    "0b",
-    "db",
+    0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, 0x46, 0xee, 0xb8, 0x14,
+    0xde, 0x5e, 0x0b, 0xdb,
   ],
   [
-    "e0",
-    "32",
-    "3a",
-    "0a",
-    "49",
-    "06",
-    "24",
-    "5c",
-    "c2",
-    "d3",
-    "ac",
-    "62",
-    "91",
-    "95",
-    "e4",
-    "79",
+    0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, 0xc2, 0xd3, 0xac, 0x62,
+    0x91, 0x95, 0xe4, 0x79,
   ],
   [
-    "e7",
-    "c8",
-    "37",
-    "6d",
-    "8d",
-    "d5",
-    "4e",
-    "a9",
-    "6c",
-    "56",
-    "f4",
-    "ea",
-    "65",
-    "7a",
-    "ae",
-    "08",
+    0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea,
+    0x65, 0x7a, 0xae, 0x08,
   ],
   [
-    "ba",
-    "78",
-    "25",
-    "2e",
-    "1c",
-    "a6",
-    "b4",
-    "c6",
-    "e8",
-    "dd",
-    "74",
-    "1f",
-    "4b",
-    "bd",
-    "8b",
-    "8a",
+    0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f,
+    0x4b, 0xbd, 0x8b, 0x8a,
   ],
   [
-    "70",
-    "3e",
-    "b5",
-    "66",
-    "48",
-    "03",
-    "f6",
-    "0e",
-    "61",
-    "35",
-    "57",
-    "b9",
-    "86",
-    "c1",
-    "1d",
-    "9e",
+    0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9,
+    0x86, 0xc1, 0x1d, 0x9e,
   ],
   [
-    "e1",
-    "f8",
-    "98",
-    "11",
-    "69",
-    "d9",
-    "8e",
-    "94",
-    "9b",
-    "1e",
-    "87",
-    "e9",
-    "ce",
-    "55",
-    "28",
-    "df",
+    0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9,
+    0xce, 0x55, 0x28, 0xdf,
   ],
   [
-    "8c",
-    "a1",
-    "89",
-    "0d",
-    "bf",
-    "e6",
-    "42",
-    "68",
-    "41",
-    "99",
-    "2d",
-    "0f",
-    "b0",
-    "54",
-    "bb",
-    "16",
+    0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f,
+    0xb0, 0x54, 0xbb, 0x16,
   ],
 ];
-
-const rCon = ["01", "02", "04", "08", "10", "20", "40", "80", "1b", "36"];
-
-const fixedMatrix = [
-  [2, 3, 1, 1],
-  [1, 2, 3, 1],
-  [1, 1, 2, 3],
-  [3, 1, 1, 2],
+const invSBox: number[][] = [
+  [
+    0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e,
+    0x81, 0xf3, 0xd7, 0xfb,
+  ],
+  [
+    0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44,
+    0xc4, 0xde, 0xe9, 0xcb,
+  ],
+  [
+    0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b,
+    0x42, 0xfa, 0xc3, 0x4e,
+  ],
+  [
+    0x08, 0x2e, 0xa1, 0x66, 0x28, 0xd9, 0x24, 0xb2, 0x76, 0x5b, 0xa2, 0x49,
+    0x6d, 0x8b, 0xd1, 0x25,
+  ],
+  [
+    0x72, 0xf8, 0xf6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xd4, 0xa4, 0x5c, 0xcc,
+    0x5d, 0x65, 0xb6, 0x92,
+  ],
+  [
+    0x6c, 0x70, 0x48, 0x50, 0xfd, 0xed, 0xb9, 0xda, 0x5e, 0x15, 0x46, 0x57,
+    0xa7, 0x8d, 0x9d, 0x84,
+  ],
+  [
+    0x90, 0xd8, 0xab, 0x00, 0x8c, 0xbc, 0xd3, 0x0a, 0xf7, 0xe4, 0x58, 0x05,
+    0xb8, 0xb3, 0x45, 0x06,
+  ],
+  [
+    0xd0, 0x2c, 0x1e, 0x8f, 0xca, 0x3f, 0x0f, 0x02, 0xc1, 0xaf, 0xbd, 0x03,
+    0x01, 0x13, 0x8a, 0x6b,
+  ],
+  [
+    0x3a, 0x91, 0x11, 0x41, 0x4f, 0x67, 0xdc, 0xea, 0x97, 0xf2, 0xcf, 0xce,
+    0xf0, 0xb4, 0xe6, 0x73,
+  ],
+  [
+    0x96, 0xac, 0x74, 0x22, 0xe7, 0xad, 0x35, 0x85, 0xe2, 0xf9, 0x37, 0xe8,
+    0x1c, 0x75, 0xdf, 0x6e,
+  ],
+  [
+    0x47, 0xf1, 0x1a, 0x71, 0x1d, 0x29, 0xc5, 0x89, 0x6f, 0xb7, 0x62, 0x0e,
+    0xaa, 0x18, 0xbe, 0x1b,
+  ],
+  [
+    0xfc, 0x56, 0x3e, 0x4b, 0xc6, 0xd2, 0x79, 0x20, 0x9a, 0xdb, 0xc0, 0xfe,
+    0x78, 0xcd, 0x5a, 0xf4,
+  ],
+  [
+    0x1f, 0xdd, 0xa8, 0x33, 0x88, 0x07, 0xc7, 0x31, 0xb1, 0x12, 0x10, 0x59,
+    0x27, 0x80, 0xec, 0x5f,
+  ],
+  [
+    0x60, 0x51, 0x7f, 0xa9, 0x19, 0xb5, 0x4a, 0x0d, 0x2d, 0xe5, 0x7a, 0x9f,
+    0x93, 0xc9, 0x9c, 0xef,
+  ],
+  [
+    0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c,
+    0x83, 0x53, 0x99, 0x61,
+  ],
+  [
+    0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63,
+    0x55, 0x21, 0x0c, 0x7d,
+  ],
+];
+const fixedMatrix: number[][] = [
+  [0x02, 0x03, 0x01, 0x01],
+  [0x01, 0x02, 0x03, 0x01],
+  [0x01, 0x01, 0x02, 0x03],
+  [0x03, 0x01, 0x01, 0x02],
+];
+const invFixedMatrix: number[][] = [
+  [0x0e, 0x0b, 0x0d, 0x09],
+  [0x09, 0x0e, 0x0b, 0x0d],
+  [0x0d, 0x09, 0x0e, 0x0b],
+  [0x0b, 0x0d, 0x09, 0x0e],
+];
+const roundConstants: number[][] = [
+  [0x01, 0x00, 0x00, 0x00],
+  [0x02, 0x00, 0x00, 0x00],
+  [0x04, 0x00, 0x00, 0x00],
+  [0x08, 0x00, 0x00, 0x00],
+  [0x10, 0x00, 0x00, 0x00],
+  [0x20, 0x00, 0x00, 0x00],
+  [0x40, 0x00, 0x00, 0x00],
+  [0x80, 0x00, 0x00, 0x00],
+  [0x1b, 0x00, 0x00, 0x00],
+  [0x36, 0x00, 0x00, 0x00],
 ];
 
 const hexCharToDecimal = (hexChar: string): number => {
   hexChar = hexChar.toLowerCase();
-
   if (hexChar >= "0" && hexChar <= "9") {
     return parseInt(hexChar, 10); // '0'-'9' to 0-9
   } else if (hexChar >= "a" && hexChar <= "f") {
@@ -310,237 +168,232 @@ const hexCharToDecimal = (hexChar: string): number => {
   }
 };
 
-const gmul2 = (hex: string): string => {
-  const firstBinaryChar = parseInt(hex[0], 16).toString(2).padStart(4, "0");
-  const highBit = firstBinaryChar[0];
-
-  const decimalValue = parseInt(hex, 16);
-  let multipliedValue = decimalValue * 2;
-  if (highBit[0] == "1") {
-    multipliedValue -= 256;
-    return xorHexValues(multipliedValue.toString(16), "1b");
-  }
-  return multipliedValue.toString(16);
-};
-
-const gmul3 = (hex: string): string => {
-  return xorHexValues(hex, gmul2(hex));
-};
-
-const multiplyHexByN = (n: number, hex: string): string => {
-  if (n == 3) return gmul3(hex);
-  if (n == 2) return gmul2(hex);
-
-  return hex;
-};
-
-const xorHexValues = (hex1, hex2): string => {
-  // Validate the inputs
-  if (!/^[\da-fA-F]+$/.test(hex1) || !/^[\da-fA-F]+$/.test(hex2)) {
-    console.log(hex1, hex2);
-    throw new Error("Invalid hexadecimal input");
+const galoisMultiplication = (a: number, b: number): number => {
+  let p = 0;
+  while (b) {
+    if (b & 1) p ^= a;
+    const highBitSet = a & 0x80;
+    a = (a << 1) & 0xff;
+    if (highBitSet) a ^= 0x1b;
+    b = b >> 1;
   }
 
-  // Convert the hexadecimal strings to decimal numbers
-  const decimalValue1 = parseInt(hex1, 16);
-  const decimalValue2 = parseInt(hex2, 16);
-
-  // Perform the XOR operation between the decimal numbers
-  const xorResult = decimalValue1 ^ decimalValue2;
-
-  // Convert the result back to a hexadecimal string
-  const hexResult = xorResult.toString(16);
-
-  return hexResult;
+  return p;
 };
 
-const mixColumns = (mat1, mat2) => {
-  let mixedBlock: string[][] = [];
-  mixedBlock[0] = [];
-  mixedBlock[1] = [];
-  mixedBlock[2] = [];
-  mixedBlock[3] = [];
+const expandKey = (byteBlock, round) => {
+  let expandedKeyBlock = [...byteBlock];
+  for (let i = 0; i < 4; ++i) {
+    const byteToHex = byteBlock[i].toString(16).padStart(2, "0");
+    const sBoxRow = hexCharToDecimal(byteToHex[0]);
+    const sBoxCol = hexCharToDecimal(byteToHex[1]);
+    const sByte = sBox[sBoxRow][sBoxCol];
+    expandedKeyBlock[(i + 3) % 4] = sByte ^ roundConstants[round][(i + 3) % 4];
+  }
+
+  return expandedKeyBlock;
+};
+
+const generateRoundKeys = (key) => {
+  let roundKeyBlocks = [];
+  let blockIndex = -1;
+
+  for (let i = 0; i < 16; ++i) {
+    let keyByteToDecimal = key.charCodeAt(i);
+    if (i % 4 == 0) {
+      roundKeyBlocks[++blockIndex] = [];
+    }
+    roundKeyBlocks[blockIndex].push(keyByteToDecimal);
+  }
+
+  // for (let i = 0; i < 10; ++i) {
+  //   const expandedKey = expandKey(roundKeyBlocks[blockIndex], i);
+
+  //   for (let k = 0; k < 4; ++k) {
+  //     roundKeyBlocks[++blockIndex] = [];
+  //     for (let j = 0; j < 4; ++j) {
+  //       roundKeyBlocks[blockIndex].push(
+  //         roundKeyBlocks[blockIndex - 4][j] ^
+  //           (k === 0 ? expandedKey[j] : roundKeyBlocks[blockIndex - 1][j])
+  //       );
+  //     }
+  //   }
+  // }
+  for (let i = 0; i < 10; ++i) {
+    const expandedKey = expandKey(roundKeyBlocks[blockIndex], i);
+    roundKeyBlocks[++blockIndex] = [];
+
+    for (let j = 0; j < 4; ++j)
+      roundKeyBlocks[blockIndex].push(
+        roundKeyBlocks[blockIndex - 4][j] ^ expandedKey[j]
+      );
+
+    for (let k = 0; k < 3; ++k) {
+      roundKeyBlocks[++blockIndex] = [];
+      for (let j = 0; j < 4; ++j)
+        roundKeyBlocks[blockIndex].push(
+          roundKeyBlocks[blockIndex - 4][j] ^ roundKeyBlocks[blockIndex - 1][j]
+        );
+    }
+  }
+  console.log("------------------------");
+
+  return roundKeyBlocks;
+};
+
+const subBytesAndShiftRows = (hexBlock) => {
+  let newHexBlock = hexBlock.map((row) => [...row]);
 
   for (let i = 0; i < 4; ++i) {
     for (let j = 0; j < 4; ++j) {
-      let a = multiplyHexByN(mat1[i][0], mat2[0][j]);
-      for (let k = 1; k < 4; ++k) {
-        const b = multiplyHexByN(mat1[i][k], mat2[k][j]);
-        a = xorHexValues(a, b);
-      }
-      mixedBlock[i][j] = a.padStart(2, "0");
+      const byteToHex = hexBlock[i][j].toString(16).padStart(2, "0");
+      const sBoxRow = hexCharToDecimal(byteToHex[0]);
+      const sBoxCol = hexCharToDecimal(byteToHex[1]);
+      const subByte = sBox[sBoxRow][sBoxCol];
+      newHexBlock[i][(j - i + 4) % 4] = subByte;
+    }
+  }
+
+  return newHexBlock;
+};
+
+const addRoundKey = (hexBlock, keys) => {
+  let newHexBlock = hexBlock.map((row) => [...row]);
+
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      newHexBlock[i][j] = hexBlock[i][j] ^ keys[j][i];
+    }
+  }
+
+  return newHexBlock;
+};
+
+const mixColumnsAndAddRoundKey = (mat1, mat2, keys) => {
+  let mixedBlock = [[], [], [], []];
+
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      mixedBlock[i][j] =
+        galoisMultiplication(mat1[i][0], mat2[0][j]) ^
+        galoisMultiplication(mat1[i][1], mat2[1][j]) ^
+        galoisMultiplication(mat1[i][2], mat2[2][j]) ^
+        galoisMultiplication(mat1[i][3], mat2[3][j]) ^
+        keys[j][i];
     }
   }
 
   return mixedBlock;
 };
 
-const addRoundCon = (w, c) => {
-  const decimalValue1 = parseInt(w, 16);
-  const decimalValue2 = parseInt(c, 16);
-  const addResult = decimalValue1 ^ decimalValue2;
-
-  // Convert the result back to a hexadecimal string
-  const hexResult = addResult.toString(16).padStart(2, "0");
-  return hexResult;
-};
-
-const g = (w, round) => {
-  const p = w[0];
-  let ww = [...w];
-  for (let i = 0; i < 4; i++) {
-    if (i < 3) ww[i] = ww[i + 1];
-    else ww[i] = p;
-    const sBoxRow = hexCharToDecimal(ww[i][0]);
-    const sBoxCol = hexCharToDecimal(ww[i][1]);
-    const subByte = sBox[sBoxRow][sBoxCol];
-    ww[i] = subByte;
-  }
-  ww[0] = addRoundCon(ww[0], rCon[round - 1]);
-  return ww;
-};
-
-const generateKeys = (key) => {
-  let keys = [];
-  let w: string[][] = [];
-  let index = 0;
-  for (let i = 0; i < 16; ++i) {
-    let keyByteToHex = key.charCodeAt(i).toString(16).padStart(2, "0");
-    if (i % 4 == 0) {
-      w[Math.floor(i / 4)] = [];
-      index++;
-    }
-    w[Math.floor(i / 4)].push(keyByteToHex);
-  }
-  let keyIndex = 0;
-  let x = "";
-  for (let i = 0; i < 4; ++i) for (let j = 0; j < 4; j++) x += w[i][j];
-  keys[keyIndex++] = x;
-
-  for (let i = 0; i < 10; ++i) {
-    const gw = g(w[index - 1], keyIndex);
-    w[index] = [];
-    for (let j = 0; j < 4; ++j)
-      w[index].push(xorHexValues(w[index - 4][j], gw[j]).padStart(2, "0"));
-    for (let k = 0; k < 3; k++) {
-      index++;
-      w[index] = [];
-      for (let j = 0; j < 4; ++j)
-        w[index].push(
-          xorHexValues(w[index - 1][j], w[index - 4][j]).padStart(2, "0")
-        );
-    }
-    index++;
-    let x = "";
-    for (let i = index - 4; i < index; ++i)
-      for (let j = 0; j < 4; j++) x += w[i][j];
-    keys[keyIndex++] = x;
-  }
-  console.log("------------------------");
-  for (let k of keys) console.log(k);
-  return w;
-};
-
-const shiftRows = (hexBlock) => {
-  let newHexBlock = hexBlock.map((row) => [...row]);
-  for (let i = 1; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      newHexBlock[i][j] = hexBlock[i][(j + i) % 4];
-    }
-  }
-
-  return newHexBlock;
-};
-
-const subBytes = (hexBlock) => {
-  let newHexBlock = hexBlock.map((row) => [...row]);
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      const sBoxRow = hexCharToDecimal(hexBlock[i][j][0]);
-      const sBoxCol = hexCharToDecimal(hexBlock[i][j][1]);
-      const subByte = sBox[sBoxRow][sBoxCol];
-      //sub + shift
-      //   hexBlock[j][(i + 4 - j) % 4] = subByte;
-      newHexBlock[i][j] = subByte;
-    }
-  }
-
-  return newHexBlock;
-};
-
-const addRoundKey = (hexBlock, keys, round) => {
-  let newHexBlock = hexBlock.map((row) => [...row]);
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      newHexBlock[i][j] = xorHexValues(
-        hexBlock[i][j],
-        keys[j + round * 4][i]
-      ).padStart(2, "0");
-    }
-  }
-
-  return newHexBlock;
-};
-
 export const aes = (input, key) => {
-  const keys = generateKeys(key);
-
-  let hexBlock: string[][] = [];
-  hexBlock[0] = [];
-  hexBlock[1] = [];
-  hexBlock[2] = [];
-  hexBlock[3] = [];
+  const roundKeys = generateRoundKeys(key);
+  let byteBlock = [[], [], [], []];
 
   for (let i = 0; i < 4; ++i) {
     for (let j = 0; j < 4; ++j) {
-      let inputByteToHex = input[i * 4 + j].toString(16).padStart(2, "0");
-      //   const sBoxRow = hexCharToDecimal(inputToHex[0]);
-      //   const sBoxCol = hexCharToDecimal(inputToHex[1]);
-      //   const subByte = sBox[sBoxRow][sBoxCol];
-      //   hexBlock[j][i] = subByte;
-      //   //sub + shift
-      //   //   hexBlock[j][(i + 4 - j) % 4] = subByte;
-      hexBlock[j][i] = inputByteToHex;
+      byteBlock[j][i] = input[i * 4 + j];
     }
   }
-  console.log("round:", 0);
-  console.log("hex:", hexBlock);
-  hexBlock = addRoundKey(hexBlock, keys, 0);
-  console.log("add:", hexBlock);
 
-  for (let round = 1; round < 11; round++) {
-    console.log("round:", round);
-    hexBlock = subBytes(hexBlock);
-    console.log("sub:", hexBlock);
+  byteBlock = addRoundKey(byteBlock, roundKeys.slice(0, 4));
 
-    hexBlock = shiftRows(hexBlock);
-    console.log("sft:", hexBlock);
+  for (let round = 1; round < 11; ++round) {
+    byteBlock = subBytesAndShiftRows(byteBlock);
+    const roundKey = roundKeys.slice(round * 4, (round + 1) * 4);
 
     if (round < 10) {
-      hexBlock = mixColumns(fixedMatrix, hexBlock);
-      console.log("mix:", hexBlock);
+      byteBlock = mixColumnsAndAddRoundKey(fixedMatrix, byteBlock, roundKey);
+    } else {
+      byteBlock = addRoundKey(byteBlock, roundKey);
     }
-
-    hexBlock = addRoundKey(hexBlock, keys, round);
-    console.log("add:", hexBlock);
-
-    console.log();
   }
-  console.log("cipher:", hexBlock);
+
+  // console.log("cipher:", hexBlock);
+  let cipher = [];
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      cipher.push(byteBlock[j][i]);
+    }
+  }
+
+  console.log("input:", input);
+  console.log("encrypt:", cipher);
+
+  aesDecrypt(cipher, key);
+};
+
+const invShiftRowAndSubBytes = (hexBlock) => {
+  let newHexBlock = hexBlock.map((row) => [...row]);
+
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      const byteToHex = hexBlock[i][j].toString(16).padStart(2, "0");
+      const sBoxRow = hexCharToDecimal(byteToHex[0]);
+      const sBoxCol = hexCharToDecimal(byteToHex[1]);
+      const subByte = invSBox[sBoxRow][sBoxCol];
+      newHexBlock[i][(j + i) % 4] = subByte;
+    }
+  }
+
+  return newHexBlock;
+};
+
+const invMixColumnsAndAddRoundKey = (mat1, mat2, keys) => {
+  let mixedBlock = [[], [], [], []];
+
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      mixedBlock[i][j] =
+        galoisMultiplication(mat1[i][0], mat2[0][j] ^ keys[j][0]) ^
+        galoisMultiplication(mat1[i][1], mat2[1][j] ^ keys[j][1]) ^
+        galoisMultiplication(mat1[i][2], mat2[2][j] ^ keys[j][2]) ^
+        galoisMultiplication(mat1[i][3], mat2[3][j] ^ keys[j][3]);
+    }
+  }
+
+  return mixedBlock;
+};
+
+export const aesDecrypt = (input, key) => {
+  const keys = generateRoundKeys(key);
+  let reversedKeys = [];
+  for (let i = keys.length - 4; i >= 0; i -= 4) {
+    reversedKeys.push(keys[i], keys[i + 1], keys[i + 2], keys[i + 3]);
+  }
+  let byteBlock = [[], [], [], []];
+
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      byteBlock[j][i] = input[i * 4 + j];
+    }
+  }
+
+  byteBlock = addRoundKey(byteBlock, reversedKeys.slice(0, 4));
+
+  for (let round = 1; round < 11; ++round) {
+    byteBlock = invShiftRowAndSubBytes(byteBlock);
+    const roundKey = reversedKeys.slice(round * 4, (round + 1) * 4);
+
+    if (round < 10) {
+      byteBlock = invMixColumnsAndAddRoundKey(
+        invFixedMatrix,
+        byteBlock,
+        roundKey
+      );
+    } else {
+      byteBlock = addRoundKey(byteBlock, roundKey);
+    }
+  }
+
+  // console.log("plain:", hexBlock);
   let pixels = [];
   for (let i = 0; i < 4; ++i) {
     for (let j = 0; j < 4; ++j) {
-      pixels.push(parseInt(hexBlock[j][i], 16));
+      pixels.push(byteBlock[j][i]);
     }
   }
+
   console.log("input:", input);
-  console.log("encrypt:", pixels);
-  //   for (let i = 0; i < 4; i++) {
-  //     for (let j = 0; j < 4; j++) {
-  //       const r = hexBlock[i][j];
-  //       hexBlock[i][j] = xorHexValues(hexBlock[i][j], keys[j][i]);
-  //       //   console.log(r, "^", keys[j][i], "=", hexBlock[i][j]);
-  //     }
-  //   }
-  //   console.log(hexBlock);
+  console.log("decrypt:", pixels);
 };

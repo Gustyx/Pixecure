@@ -7,7 +7,7 @@ const Home = () => {
   const router = useRouter();
 
   const pixels = [
-    84, 104, 101, 32, 113, 117, 105, 99, 107, 32, 98, 114, 111, 119, 110, 32,
+    78, 142, 203, 31, 194, 90, 221, 9, 165, 115, 238, 52, 33, 176, 217, 70,
   ];
   aes(pixels, "Thats my Kung Fu");
   // aes("The quick brown ", "abcdefghijklmnop");
