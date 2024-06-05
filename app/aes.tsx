@@ -236,7 +236,6 @@ const generateRoundKeys = (key) => {
         );
     }
   }
-  console.log("------------------------");
 
   return roundKeyBlocks;
 };
@@ -317,10 +316,11 @@ export const aes = (input, key) => {
     }
   }
 
-  console.log("input:", input);
-  console.log("encrypt:", cipher);
+  // console.log("input:", input);
+  // console.log("encrypt:", cipher);
 
-  aesDecrypt(cipher, key);
+  // aesDecrypt(cipher, key);
+  return cipher;
 };
 
 const invShiftRowAndSubBytes = (hexBlock) => {
@@ -387,13 +387,14 @@ export const aesDecrypt = (input, key) => {
   }
 
   // console.log("plain:", hexBlock);
-  let pixels = [];
+  let plain = [];
   for (let i = 0; i < 4; ++i) {
     for (let j = 0; j < 4; ++j) {
-      pixels.push(byteBlock[j][i]);
+      plain.push(byteBlock[j][i]);
     }
   }
 
-  console.log("input:", input);
-  console.log("decrypt:", pixels);
+  // console.log("input:", input);
+  // console.log("decrypt:", pixels);
+  return plain;
 };
