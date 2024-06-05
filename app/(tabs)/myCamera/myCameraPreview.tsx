@@ -29,6 +29,7 @@ import {
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
 import * as FileSystem from "expo-file-system";
+import { aes } from "../../aes";
 
 let webViewLoaded = false;
 let base64image;
@@ -51,9 +52,9 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           image.uri,
-          [{ resize: { width: 500 } }],
+          [{ resize: { width: 30 } }],
           {
-            // format: ImageManipulator.SaveFormat.JPEG,
+            format: ImageManipulator.SaveFormat.PNG,
             base64: true,
           }
         );
@@ -78,7 +79,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
 
   const onMessage = async (event) => {
     const webViewMessage = JSON.parse(event.nativeEvent.data);
-    if (webViewMessage[0] != "/") {
+    if (webViewMessage[0] != "i") {
       setPixels(webViewMessage);
     } else {
       saveImage(webViewMessage);
@@ -86,19 +87,32 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   };
 
   const saveImage = async (webViewMessage) => {
-    const fileUri = `${FileSystem.documentDirectory}temp_image.jpg`;
+    const fileUri = `${FileSystem.documentDirectory}temp_image.png`;
     await FileSystem.writeAsStringAsync(fileUri, webViewMessage, {
       encoding: FileSystem.EncodingType.Base64,
     });
+    const fileInfo = await FileSystem.getInfoAsync(fileUri);
     const currentUserId = auth.currentUser?.uid;
     const userRef = doc(db, "users", currentUserId);
     thisImageDetails["date"] = date.toLocaleDateString();
     const metadata = {
       customMetadata: { ...thisImageDetails },
     };
-    const fileInfo = await FileSystem.getInfoAsync(fileUri);
     uploadImage(fileInfo.uri, metadata)
       .then(async (downloadURLs) => {
+        const manipResult = await ImageManipulator.manipulateAsync(
+          image.uri,
+          [{ resize: { width: 30 } }],
+          {
+            format: ImageManipulator.SaveFormat.PNG,
+            base64: true,
+          }
+        );
+        if (webViewMessage === manipResult.base64) {
+          console.log("Base64 strings match.");
+        } else {
+          console.log("Base64 strings do not match.");
+        }
         const formatedDate = formatDate(thisImageDetails["date"]);
         await updateDoc(userRef, {
           images: arrayUnion({
@@ -142,20 +156,39 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   const handleSaveImage = () => {
     if (!displayDetails) setDisplayDetails(true);
     else {
-      let newPixels = pixels;
-      for (let i = 0; i < newPixels.length; i += 4) {
-        newPixels[i] = 255 - newPixels[i]; // Invert Red
-        newPixels[i + 1] = 255 - newPixels[i + 1]; // Invert Green
-        newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
+      let newPixels = [];
+      // for (let i = 0; i < pixels.length; i += 16) {
+      //   let p = aes(pixels.slice(i, i + 16), "Thats my Kung Fu");
+      //   newPixels = [...newPixels, ...p];
+      // }
+
+      let p = [];
+      for (let i = 0; i < pixels.length; i++) {
+        if ((i + 1) % 4 !== 0) {
+          p.push(pixels[i]);
+        }
+        if (p.length === 16) {
+          let enc = aes(p, "Thats my Kung Fu");
+          p = [];
+          for (let j = 0; j < 16; j++) {
+            newPixels.push(enc[j]);
+            if ((newPixels.length + 1) % 4 === 0) {
+              newPixels.push(255);
+            }
+          }
+        }
       }
 
+      // console.log("old:", pixels);
+      // console.log("new:", newPixels);
+      // console.log(pixels.length);
+      // console.log(newPixels.length);
       const newPixelData = JSON.stringify(newPixels);
-      // console.log(a);
-      // const script = loadPixelsAndSendNewBase64Script(
-      //   base64image,
-      //   newPixelData
-      // );
-      // webViewRef.current.injectJavaScript(script);
+      const script = loadPixelsAndSendNewBase64Script(
+        base64image,
+        newPixelData
+      );
+      webViewRef.current.injectJavaScript(script);
     }
   };
 

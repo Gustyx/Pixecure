@@ -28,6 +28,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
+import { aesDecrypt } from "../../aes";
 
 let selectedDate: Date;
 let imageScale = 4 / 3;
@@ -49,14 +50,15 @@ const Inspect = () => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           imageUrl,
-          [{ resize: { width: 500 } }],
+          [{ resize: { width: 30 } }],
           {
-            // format: ImageManipulator.SaveFormat.JPEG,
+            format: ImageManipulator.SaveFormat.PNG,
             base64: true,
           }
         );
         imageScale = manipResult.height / manipResult.width;
         base64image = manipResult.base64;
+        console.log(base64image);
         if (webViewLoaded) {
           const script = loadBase64andSendPixelsScript(base64image);
           webViewRef.current.injectJavaScript(script);
@@ -96,20 +98,41 @@ const Inspect = () => {
 
   const onMessage = async (event) => {
     const webViewMessage = JSON.parse(event.nativeEvent.data);
-    if (webViewMessage[0] != "/") {
+    if (webViewMessage[0] != "i") {
       getDecryptedImageUrl(webViewMessage);
     } else {
       setDecryptedBase64(webViewMessage);
     }
   };
 
-  const getDecryptedImageUrl = (webViewMessage) => {
-    let newPixels = webViewMessage;
-    for (let i = 0; i < newPixels.length; i += 4) {
-      newPixels[i] = 255 - newPixels[i]; // Invert Red
-      newPixels[i + 1] = 255 - newPixels[i + 1]; // Invert Green
-      newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
+  const getDecryptedImageUrl = (pixels) => {
+    let newPixels = [];
+
+    // for (let i = 0; i < pixels.length; i += 16) {
+    //   let p = aesDecrypt(pixels.slice(i, i + 16), "Thats my Kung Fu");
+    //   newPixels = [...newPixels, ...p];
+    // }
+
+    let p = [];
+    for (let i = 0; i < pixels.length; i++) {
+      if ((i + 1) % 4 !== 0) {
+        p.push(pixels[i]);
+      }
+      if (p.length === 16) {
+        let enc = aesDecrypt(p, "Thats my Kung Fu");
+        p = [];
+        for (let j = 0; j < 16; j++) {
+          newPixels.push(enc[j]);
+          if ((newPixels.length + 1) % 4 === 0) {
+            newPixels.push(255);
+          }
+        }
+      }
     }
+    // console.log(pixels.length);
+    // console.log(newPixels.length);
+    // console.log("old:", pixels);
+    // console.log("new:", newPixels);
     const newPixelData = JSON.stringify(newPixels);
     const script = loadPixelsAndSendNewBase64Script(base64image, newPixelData);
     webViewRef.current.injectJavaScript(script);
@@ -201,8 +224,8 @@ const Inspect = () => {
       <ImageBackground
         source={{
           uri: decryptedBase64
-            ? `data:image/jpeg;base64,${decryptedBase64}`
-            : `data:image/jpeg;base64,${params.decryptedSmallUrl}`,
+            ? `data:image/png;base64,${decryptedBase64}`
+            : `data:image/png;base64,${params.decryptedSmallUrl}`,
         }}
         style={imageStyle}
       >

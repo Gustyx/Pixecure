@@ -233,7 +233,7 @@ const HomePage = () => {
 
   const onMessage = async (event) => {
     const webViewMessage = JSON.parse(event.nativeEvent.data);
-    if (webViewMessage[0] != "/") {
+    if (webViewMessage[0] != "i") {
       getDecryptedImageUrl(webViewMessage);
     } else {
       decryptedBase64images.push(webViewMessage);
@@ -248,6 +248,7 @@ const HomePage = () => {
       newPixels[i] = 255 - newPixels[i]; // Invert Red
       newPixels[i + 1] = 255 - newPixels[i + 1]; // Invert Green
       newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
+      // newPixels[i + 3] = 255 - newPixels[i + 3]; // Invert Blue
     }
     const newPixelData = JSON.stringify(newPixels);
     const script = loadPixelsAndSendNewBase64Script(

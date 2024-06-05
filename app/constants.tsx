@@ -66,7 +66,7 @@ export const loadBase64andSendPixelsScript = (base64string) => {
   const script = `
   (function() {
     const img = new Image();
-    img.src = img.src = 'data:image/jpeg;base64,${base64string}';
+    img.src = img.src = 'data:image/png;base64,${base64string}';
     img.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = img.width;
@@ -85,7 +85,7 @@ export const loadBase64andSendPixelsScriptWithIndex = (base64string, index) => {
   const script = `
     (function() {
       const img = new Image();
-      img.src = 'data:image/jpeg;base64,${base64string}';
+      img.src = 'data:image/png;base64,${base64string}';
       img.onload = () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
@@ -110,17 +110,17 @@ export const loadPixelsAndSendNewBase64Script = (
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', {alpha: false});
     const img = new Image();
-    img.src = 'data:image/jpeg;base64,${oldBase64string}';
+    img.src = 'data:image/png;base64,${oldBase64string}';
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;
       const imageData = ctx.createImageData(img.width, img.height);
       const pixelData = ${newPixels};
-      for (let i = 0; i < pixelData.length - 1; i++) {
+      for (let i = 0; i < pixelData.length; i++) {
         imageData.data[i] = pixelData[i];
       }
       ctx.putImageData(imageData, 0, 0);
-      const newBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
+      const newBase64 = canvas.toDataURL('image/png').split(',')[1];
       window.ReactNativeWebView.postMessage(JSON.stringify(newBase64));
     };
   })();
