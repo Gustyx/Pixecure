@@ -28,7 +28,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
-import { aesDecrypt } from "../../aes";
+import { aesDecrypt, aesDecrypt1by1 } from "../../aes";
 
 let selectedDate: Date;
 let imageScale = 4 / 3;
@@ -50,15 +50,16 @@ const Inspect = () => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           imageUrl,
-          [{ resize: { width: 30 } }],
+          [{ resize: { width: 300 } }],
           {
+            // compress: 0.7,
             format: ImageManipulator.SaveFormat.PNG,
             base64: true,
           }
         );
         imageScale = manipResult.height / manipResult.width;
         base64image = manipResult.base64;
-        console.log(base64image);
+        // console.log(base64image);
         if (webViewLoaded) {
           const script = loadBase64andSendPixelsScript(base64image);
           webViewRef.current.injectJavaScript(script);
@@ -113,14 +114,18 @@ const Inspect = () => {
     //   newPixels = [...newPixels, ...p];
     // }
 
+    const startTime = performance.now();
+    console.log("start");
     let p = [];
+    let round = 0;
     for (let i = 0; i < pixels.length; i++) {
       if ((i + 1) % 4 !== 0) {
         p.push(pixels[i]);
       }
       if (p.length === 16) {
-        let enc = aesDecrypt(p, "Thats my Kung Fu");
+        let enc = aesDecrypt1by1(p, "Thats my Kung Fu", round % 11);
         p = [];
+        ++round;
         for (let j = 0; j < 16; j++) {
           newPixels.push(enc[j]);
           if ((newPixels.length + 1) % 4 === 0) {
@@ -129,6 +134,11 @@ const Inspect = () => {
         }
       }
     }
+    const endTime = performance.now();
+    const elapsedTime = endTime - startTime;
+
+    console.log("Elapsed time for decryption:", elapsedTime);
+
     // console.log(pixels.length);
     // console.log(newPixels.length);
     // console.log("old:", pixels);

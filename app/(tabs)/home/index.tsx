@@ -191,6 +191,7 @@ const HomePage = () => {
         deleteObject(smallImageRef)
           .then(() => {
             Alert.alert("Image deleted.");
+            console.log("Deleted", image.url);
           })
           .catch((error) => {
             console.error(error);

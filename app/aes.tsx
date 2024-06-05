@@ -1,5 +1,3 @@
-import { keys } from "./constants";
-
 const sBox: number[][] = [
   [
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
@@ -356,7 +354,7 @@ const invMixColumnsAndAddRoundKey = (mat1, mat2, keys) => {
 };
 
 export const aesDecrypt = (input, key) => {
-  const keys = generateRoundKeys(key);
+  // const keys = generateRoundKeys(key);
   let reversedKeys = [];
   for (let i = keys.length - 4; i >= 0; i -= 4) {
     reversedKeys.push(keys[i], keys[i + 1], keys[i + 2], keys[i + 3]);
@@ -398,3 +396,92 @@ export const aesDecrypt = (input, key) => {
   // console.log("decrypt:", pixels);
   return plain;
 };
+
+export const aes1by1 = (input, key, round) => {
+  // const roundKeys = generateRoundKeys(key);
+  const roundKeys = keys;
+  let byteBlock = [[], [], [], []];
+
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      byteBlock[j][i] = input[i * 4 + j];
+    }
+  }
+
+  if (round === 0) {
+    byteBlock = addRoundKey(byteBlock, roundKeys.slice(0, 4));
+  } else {
+    // for (let round = 1; round < 11; ++round) {
+    byteBlock = subBytesAndShiftRows(byteBlock);
+    const roundKey = roundKeys.slice(round * 4, (round + 1) * 4);
+
+    if (round < 10) {
+      byteBlock = mixColumnsAndAddRoundKey(fixedMatrix, byteBlock, roundKey);
+    } else {
+      byteBlock = addRoundKey(byteBlock, roundKey);
+    }
+  }
+  // }
+
+  // console.log("cipher:", hexBlock);
+  let cipher = [];
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      cipher.push(byteBlock[j][i]);
+    }
+  }
+
+  // console.log("input:", input);
+  // console.log("encrypt:", cipher);
+
+  // aesDecrypt(cipher, key);
+  return cipher;
+};
+export const aesDecrypt1by1 = (input, key, round) => {
+  // const keys = generateRoundKeys(key);
+  // const roundKeys = keys
+  let reversedKeys = keys;
+  // for (let i = keys.length - 4; i >= 0; i -= 4) {
+  //   reversedKeys.push(keys[i], keys[i + 1], keys[i + 2], keys[i + 3]);
+  // }
+  let byteBlock = [[], [], [], []];
+
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      byteBlock[j][i] = input[i * 4 + j];
+    }
+  }
+
+  // for (let round = 1; round < 11; ++round) {
+  if (round === 0) {
+    byteBlock = addRoundKey(byteBlock, reversedKeys.slice(0, 4));
+  } else {
+    const roundKey = reversedKeys.slice(round * 4, (round + 1) * 4);
+    if (round < 10) {
+      byteBlock = invMixColumnsAndAddRoundKey(
+        invFixedMatrix,
+        byteBlock,
+        roundKey
+      );
+    } else {
+      byteBlock = addRoundKey(byteBlock, roundKey);
+    }
+    byteBlock = invShiftRowAndSubBytes(byteBlock);
+  }
+  // }
+
+  // console.log("plain:", hexBlock);
+  let plain = [];
+  for (let i = 0; i < 4; ++i) {
+    for (let j = 0; j < 4; ++j) {
+      plain.push(byteBlock[j][i]);
+    }
+  }
+
+  // console.log("input:", input);
+  // console.log("decrypt:", pixels);
+  return plain;
+};
+
+const keys = generateRoundKeys("Thats my Kung Fu");
+const keys2 = generateRoundKeys("Thats my Kung Fv");

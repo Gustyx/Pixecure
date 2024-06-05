@@ -63,10 +63,13 @@ export const getSmallImageRef = (imageUrl) => {
 // img.src = 'data:image/jpeg;base64,${base64string}';
 export const loadBase64andSendPixelsScript = (base64string) => {
   // console.log(base64string);
+  // img.src = 'data:image/png;base64,${base64string}';
+
+  // img.src = '${base64string}';
   const script = `
   (function() {
     const img = new Image();
-    img.src = img.src = 'data:image/png;base64,${base64string}';
+    img.src = 'data:image/png;base64,${base64string}';
     img.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = img.width;
@@ -101,6 +104,7 @@ export const loadBase64andSendPixelsScriptWithIndex = (base64string, index) => {
   `;
   return script;
 };
+// img.src = 'data:image/png;base64,${oldBase64string}';
 export const loadPixelsAndSendNewBase64Script = (
   oldBase64string,
   newPixels

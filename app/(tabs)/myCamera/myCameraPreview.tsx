@@ -29,7 +29,7 @@ import {
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
 import * as FileSystem from "expo-file-system";
-import { aes } from "../../aes";
+import { aes, aes1by1 } from "../../aes";
 
 let webViewLoaded = false;
 let base64image;
@@ -50,14 +50,20 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   useEffect(() => {
     const fetchImageSize = async () => {
       try {
+        // const initialBase64 = await FileSystem.readAsStringAsync(image.uri, {
+        //   encoding: FileSystem.EncodingType.Base64,
+        // });
+        // console.log(initialBase64);
         const manipResult = await ImageManipulator.manipulateAsync(
           image.uri,
-          [{ resize: { width: 30 } }],
+          [{ resize: { width: 300 } }],
           {
+            compress: 0.7,
             format: ImageManipulator.SaveFormat.PNG,
             base64: true,
           }
         );
+        console.log(manipResult.height);
         base64image = manipResult.base64;
         if (webViewLoaded) {
           const script = loadBase64andSendPixelsScript(base64image);
@@ -87,32 +93,26 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   };
 
   const saveImage = async (webViewMessage) => {
-    const fileUri = `${FileSystem.documentDirectory}temp_image.png`;
-    await FileSystem.writeAsStringAsync(fileUri, webViewMessage, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    const fileInfo = await FileSystem.getInfoAsync(fileUri);
+    const manipResult = await ImageManipulator.manipulateAsync(
+      "data:image/png;base64," + webViewMessage,
+      [],
+      {
+        format: ImageManipulator.SaveFormat.PNG,
+      }
+    );
+    // const fileUri = `${FileSystem.documentDirectory}temp_image.png`;
+    // await FileSystem.writeAsStringAsync(fileUri, webViewMessage, {
+    //   encoding: FileSystem.EncodingType.Base64,
+    // });
+    // const fileInfo = await FileSystem.getInfoAsync(fileUri);
     const currentUserId = auth.currentUser?.uid;
     const userRef = doc(db, "users", currentUserId);
     thisImageDetails["date"] = date.toLocaleDateString();
     const metadata = {
       customMetadata: { ...thisImageDetails },
     };
-    uploadImage(fileInfo.uri, metadata)
+    uploadImage(manipResult.uri, metadata)
       .then(async (downloadURLs) => {
-        const manipResult = await ImageManipulator.manipulateAsync(
-          image.uri,
-          [{ resize: { width: 30 } }],
-          {
-            format: ImageManipulator.SaveFormat.PNG,
-            base64: true,
-          }
-        );
-        if (webViewMessage === manipResult.base64) {
-          console.log("Base64 strings match.");
-        } else {
-          console.log("Base64 strings do not match.");
-        }
         const formatedDate = formatDate(thisImageDetails["date"]);
         await updateDoc(userRef, {
           images: arrayUnion({
@@ -162,14 +162,18 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       //   newPixels = [...newPixels, ...p];
       // }
 
+      const startTime = performance.now();
+      console.log("start");
       let p = [];
+      let round = 0;
       for (let i = 0; i < pixels.length; i++) {
         if ((i + 1) % 4 !== 0) {
           p.push(pixels[i]);
         }
         if (p.length === 16) {
-          let enc = aes(p, "Thats my Kung Fu");
+          let enc = aes1by1(p, "Thats my Kung Fu", round % 11);
           p = [];
+          ++round;
           for (let j = 0; j < 16; j++) {
             newPixels.push(enc[j]);
             if ((newPixels.length + 1) % 4 === 0) {
@@ -178,6 +182,10 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           }
         }
       }
+      const endTime = performance.now();
+      const elapsedTime = endTime - startTime;
+
+      console.log("Elapsed time for encryption:", elapsedTime);
 
       // console.log("old:", pixels);
       // console.log("new:", newPixels);
