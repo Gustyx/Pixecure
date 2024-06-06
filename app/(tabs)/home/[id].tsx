@@ -50,7 +50,7 @@ const Inspect = () => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           imageUrl,
-          [{ resize: { width: 300 } }],
+          [],
           {
             // compress: 0.7,
             format: ImageManipulator.SaveFormat.PNG,
@@ -123,9 +123,9 @@ const Inspect = () => {
         p.push(pixels[i]);
       }
       if (p.length === 16) {
-        let enc = aesDecrypt1by1(p, "Thats my Kung Fu", round % 11);
+        let enc = aesDecrypt1by1(p, round);
         p = [];
-        ++round;
+        round = (round + 1) % 11;
         for (let j = 0; j < 16; j++) {
           newPixels.push(enc[j]);
           if ((newPixels.length + 1) % 4 === 0) {

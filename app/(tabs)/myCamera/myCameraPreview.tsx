@@ -28,18 +28,21 @@ import {
 } from "../../constants";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
-import * as FileSystem from "expo-file-system";
 import { aes, aes1by1 } from "../../aes";
 
 let webViewLoaded = false;
 let base64image;
+let smallBase64image;
 const date = new Date(Date.now());
+let newBase64;
+let newSmallBase64;
 
 const MyCameraPreview = ({ onExitPreview, image }) => {
   const [displayDetails, setDisplayDetails] = useState<boolean>(false);
   const [thisImageDetails, setThisImageDetails] =
     useState<ImageDetails>(imageDetails);
   const [pixels, setPixels] = useState<number[]>([]);
+  const [smallPixels, setSmallPixels] = useState<number[]>([]);
   const webViewRef = useRef(null);
   const imageScale = image.height / image.width;
 
@@ -50,10 +53,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   useEffect(() => {
     const fetchImageSize = async () => {
       try {
-        // const initialBase64 = await FileSystem.readAsStringAsync(image.uri, {
-        //   encoding: FileSystem.EncodingType.Base64,
-        // });
-        // console.log(initialBase64);
         const manipResult = await ImageManipulator.manipulateAsync(
           image.uri,
           [{ resize: { width: 300 } }],
@@ -63,8 +62,18 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
             base64: true,
           }
         );
-        console.log(manipResult.height);
+        const smallManipResult = await ImageManipulator.manipulateAsync(
+          image.uri,
+          [{ resize: { width: 48 } }],
+          {
+            compress: 0.7,
+            format: ImageManipulator.SaveFormat.PNG,
+            base64: true,
+          }
+        );
+        console.log(smallManipResult.height);
         base64image = manipResult.base64;
+        smallBase64image = smallManipResult.base64;
         if (webViewLoaded) {
           const script = loadBase64andSendPixelsScript(base64image);
           webViewRef.current.injectJavaScript(script);
@@ -86,25 +95,33 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   const onMessage = async (event) => {
     const webViewMessage = JSON.parse(event.nativeEvent.data);
     if (webViewMessage[0] != "i") {
-      setPixels(webViewMessage);
+      if (pixels.length === 0) {
+        setPixels(webViewMessage);
+        const script = loadBase64andSendPixelsScript(smallBase64image);
+        webViewRef.current.injectJavaScript(script);
+      } else {
+        setSmallPixels(webViewMessage);
+      }
     } else {
-      saveImage(webViewMessage);
+      // saveImage(webViewMessage);
+      if (!newBase64) {
+        newBase64 = webViewMessage;
+      } else {
+        newSmallBase64 = webViewMessage;
+        saveImage();
+      }
     }
   };
 
-  const saveImage = async (webViewMessage) => {
+  const saveImage = async () => {
     const manipResult = await ImageManipulator.manipulateAsync(
-      "data:image/png;base64," + webViewMessage,
+      "data:image/png;base64," + newBase64,
       [],
       {
         format: ImageManipulator.SaveFormat.PNG,
       }
     );
-    // const fileUri = `${FileSystem.documentDirectory}temp_image.png`;
-    // await FileSystem.writeAsStringAsync(fileUri, webViewMessage, {
-    //   encoding: FileSystem.EncodingType.Base64,
-    // });
-    // const fileInfo = await FileSystem.getInfoAsync(fileUri);
+    newBase64 = "";
     const currentUserId = auth.currentUser?.uid;
     const userRef = doc(db, "users", currentUserId);
     thisImageDetails["date"] = date.toLocaleDateString();
@@ -142,9 +159,11 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     await uploadBytes(imageRef, blob, metadata);
     const downloadURL = await getDownloadURL(imageRef);
 
-    const smallImage = await ImageManipulator.manipulateAsync(uri, [
-      { resize: { width: 100 } },
-    ]);
+    const smallImage = await ImageManipulator.manipulateAsync(
+      "data:image/png;base64," + newSmallBase64,
+      [],
+      { format: ImageManipulator.SaveFormat.PNG }
+    );
     const smallImageRef = ref(storage, smallImageFolderPath + imageName);
     const smallResponse = await fetch(smallImage.uri);
     const smallBlob = await smallResponse.blob();
@@ -157,13 +176,9 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     if (!displayDetails) setDisplayDetails(true);
     else {
       let newPixels = [];
-      // for (let i = 0; i < pixels.length; i += 16) {
-      //   let p = aes(pixels.slice(i, i + 16), "Thats my Kung Fu");
-      //   newPixels = [...newPixels, ...p];
-      // }
 
-      const startTime = performance.now();
       console.log("start");
+      let startTime = performance.now();
       let p = [];
       let round = 0;
       for (let i = 0; i < pixels.length; i++) {
@@ -171,9 +186,9 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           p.push(pixels[i]);
         }
         if (p.length === 16) {
-          let enc = aes1by1(p, "Thats my Kung Fu", round % 11);
+          let enc = aes1by1(p, round);
           p = [];
-          ++round;
+          round = (round + 1) % 11;
           for (let j = 0; j < 16; j++) {
             newPixels.push(enc[j]);
             if ((newPixels.length + 1) % 4 === 0) {
@@ -182,21 +197,51 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           }
         }
       }
-      const endTime = performance.now();
-      const elapsedTime = endTime - startTime;
-
+      let endTime = performance.now();
+      let elapsedTime = endTime - startTime;
       console.log("Elapsed time for encryption:", elapsedTime);
 
-      // console.log("old:", pixels);
-      // console.log("new:", newPixels);
-      // console.log(pixels.length);
-      // console.log(newPixels.length);
       const newPixelData = JSON.stringify(newPixels);
       const script = loadPixelsAndSendNewBase64Script(
         base64image,
         newPixelData
       );
       webViewRef.current.injectJavaScript(script);
+
+      let newSmallPixels = [];
+
+      console.log("start");
+      startTime = performance.now();
+      p = [];
+      round = 0;
+
+      for (let i = 0; i < smallPixels.length; i++) {
+        if ((i + 1) % 4 !== 0) {
+          p.push(smallPixels[i]);
+        }
+        if (p.length === 16) {
+          let enc = aes1by1(p, round);
+          p = [];
+          round = (round + 1) % 11;
+          for (let j = 0; j < 16; j++) {
+            newSmallPixels.push(enc[j]);
+            if ((newSmallPixels.length + 1) % 4 === 0) {
+              newSmallPixels.push(255);
+            }
+          }
+        }
+      }
+      endTime = performance.now();
+      elapsedTime = endTime - startTime;
+
+      console.log("Elapsed time for encryption:", elapsedTime);
+
+      const newSmallPixelData = JSON.stringify(newSmallPixels);
+      const smallScript = loadPixelsAndSendNewBase64Script(
+        smallBase64image,
+        newSmallPixelData
+      );
+      webViewRef.current.injectJavaScript(smallScript);
     }
   };
 

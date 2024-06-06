@@ -30,6 +30,7 @@ import { useNavigation } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import WebView from "react-native-webview";
 import * as ImageManipulator from "expo-image-manipulator";
+import { aesDecrypt1by1 } from "../../aes";
 
 let key;
 AsyncStorage.getItem("sortingKey").then((value) => {
@@ -83,9 +84,9 @@ const HomePage = () => {
               categorizedImagesByDate[date].push(image);
               const manipResult = await ImageManipulator.manipulateAsync(
                 image.smallUrl,
-                [{ resize: { width: 100 } }],
+                [],
                 {
-                  // format: ImageManipulator.SaveFormat.JPEG,
+                  format: ImageManipulator.SaveFormat.PNG,
                   base64: true,
                 }
               );
@@ -244,13 +245,35 @@ const HomePage = () => {
   };
 
   const getDecryptedImageUrl = (webViewMessage) => {
-    let newPixels = webViewMessage;
-    for (let i = 0; i < newPixels.length - 1; i += 4) {
-      newPixels[i] = 255 - newPixels[i]; // Invert Red
-      newPixels[i + 1] = 255 - newPixels[i + 1]; // Invert Green
-      newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
-      // newPixels[i + 3] = 255 - newPixels[i + 3]; // Invert Blue
+    // let newPixels = webViewMessage;
+    // for (let i = 0; i < newPixels.length - 1; i += 4) {
+    //   newPixels[i] = 255 - newPixels[i]; // Invert Red
+    //   newPixels[i + 1] = 255 - newPixels[i + 1]; // Invert Green
+    //   newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
+    //   // newPixels[i + 3] = 255 - newPixels[i + 3]; // Invert Blue
+    // }
+
+    // console.log(webViewMessage);
+    let newPixels = [];
+    let p = [];
+    let round = 0;
+    for (let i = 0; i < webViewMessage.length - 1; i++) {
+      if ((i + 1) % 4 !== 0) {
+        p.push(webViewMessage[i]);
+      }
+      if (p.length === 16) {
+        let enc = aesDecrypt1by1(p, round);
+        p = [];
+        round = (round + 1) % 11;
+        for (let j = 0; j < 16; j++) {
+          newPixels.push(enc[j]);
+          if ((newPixels.length + 1) % 4 === 0) {
+            newPixels.push(255);
+          }
+        }
+      }
     }
+
     const newPixelData = JSON.stringify(newPixels);
     const script = loadPixelsAndSendNewBase64Script(
       base64images[webViewMessage[webViewMessage.length - 1]],

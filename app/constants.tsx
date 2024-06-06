@@ -11,7 +11,7 @@ export interface ImageDetails {
 }
 export const screenWidth = Dimensions.get("window").width;
 export const screenHeight = Dimensions.get("window").height;
-export const imagesPerRow = 6;
+export const imagesPerRow = 7;
 export const imageFolderPath = "images/";
 export const smallImageFolderPath = "small_images/";
 export const imageDetails: ImageDetails = {

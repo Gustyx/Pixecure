@@ -397,7 +397,7 @@ export const aesDecrypt = (input, key) => {
   return plain;
 };
 
-export const aes1by1 = (input, key, round) => {
+export const aes1by1 = (input, round) => {
   // const roundKeys = generateRoundKeys(key);
   const roundKeys = keys;
   let byteBlock = [[], [], [], []];
@@ -437,7 +437,7 @@ export const aes1by1 = (input, key, round) => {
   // aesDecrypt(cipher, key);
   return cipher;
 };
-export const aesDecrypt1by1 = (input, key, round) => {
+export const aesDecrypt1by1 = (input, round) => {
   // const keys = generateRoundKeys(key);
   // const roundKeys = keys
   let reversedKeys = keys;
