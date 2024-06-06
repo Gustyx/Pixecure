@@ -28,7 +28,8 @@ import {
 } from "../../constants";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
-import { aes, aes1by1 } from "../../aes";
+import { aes1by1, generateRoundKeys } from "../../aes";
+import * as Crypto from "expo-crypto";
 
 let webViewLoaded = false;
 let base64image;
@@ -43,6 +44,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     useState<ImageDetails>(imageDetails);
   const [pixels, setPixels] = useState<number[]>([]);
   const [smallPixels, setSmallPixels] = useState<number[]>([]);
+  const [encryptionRoundKeys, setEncryptionRoundKeys] = useState([]);
   const webViewRef = useRef(null);
   const imageScale = image.height / image.width;
 
@@ -51,6 +53,25 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   };
 
   useEffect(() => {
+    const generateEncryptionKey = async () => {
+      const uid = auth.currentUser.uid;
+      const digest = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        uid + uid
+      );
+
+      let key = "";
+      for (let i = 0; key.length < 16; ++i) {
+        key =
+          key +
+          digest[uid.charCodeAt(uid.length - 1 - i) % 64] +
+          digest[uid.charCodeAt(i) % 64];
+      }
+
+      const roundKeys = generateRoundKeys(key);
+      setEncryptionRoundKeys(roundKeys);
+    };
+
     const fetchImageSize = async () => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
@@ -83,6 +104,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       }
     };
 
+    generateEncryptionKey();
     fetchImageSize();
   }, []);
 
@@ -186,7 +208,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           p.push(pixels[i]);
         }
         if (p.length === 16) {
-          let enc = aes1by1(p, round);
+          let enc = aes1by1(p, encryptionRoundKeys, round);
           p = [];
           round = (round + 1) % 11;
           for (let j = 0; j < 16; j++) {
@@ -220,7 +242,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           p.push(smallPixels[i]);
         }
         if (p.length === 16) {
-          let enc = aes1by1(p, round);
+          let enc = aes1by1(p, encryptionRoundKeys, round);
           p = [];
           round = (round + 1) % 11;
           for (let j = 0; j < 16; j++) {

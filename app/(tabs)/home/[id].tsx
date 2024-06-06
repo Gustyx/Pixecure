@@ -28,7 +28,8 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
-import { aesDecrypt, aesDecrypt1by1 } from "../../aes";
+import { aesDecrypt1by1, generateRoundKeys } from "../../aes";
+import * as Crypto from "expo-crypto";
 
 let selectedDate: Date;
 let imageScale = 4 / 3;
@@ -41,28 +42,49 @@ const Inspect = () => {
     useState<ImageDetails>(imageDetails);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const [decryptedBase64, setDecryptedBase64] = useState<string>("");
+  const [firstBase64image, setFirstBase64image] = useState<string>("");
+  const [decryptionRoundKeys, setDecryptionRoundKeys] = useState([]);
   const params = useLocalSearchParams();
   const imageUrl = Array.isArray(params.id) ? params.id[0] : params.id;
   const webViewRef = useRef(null);
 
   useEffect(() => {
+    const generateDecryptionKey = async () => {
+      const uid = auth.currentUser.uid;
+      const digest = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        uid + uid
+      );
+
+      let key = "";
+      for (let i = 0; key.length < 16; ++i) {
+        key =
+          key +
+          digest[uid.charCodeAt(uid.length - 1 - i) % 64] +
+          digest[uid.charCodeAt(i) % 64];
+      }
+
+      const roundKeys = generateRoundKeys(key);
+      setDecryptionRoundKeys(roundKeys);
+    };
+
     const fetchImageSize = async () => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           imageUrl,
           [],
           {
-            // compress: 0.7,
             format: ImageManipulator.SaveFormat.PNG,
             base64: true,
           }
         );
         imageScale = manipResult.height / manipResult.width;
         base64image = manipResult.base64;
-        // console.log(base64image);
         if (webViewLoaded) {
           const script = loadBase64andSendPixelsScript(base64image);
           webViewRef.current.injectJavaScript(script);
+        } else {
+          setFirstBase64image(base64image);
         }
       } catch (error) {
         console.error("Error getting image size:", error);
@@ -93,6 +115,7 @@ const Inspect = () => {
       }
     };
 
+    generateDecryptionKey();
     fetchImageSize();
     getImageMetadata();
   }, []);
@@ -108,12 +131,6 @@ const Inspect = () => {
 
   const getDecryptedImageUrl = (pixels) => {
     let newPixels = [];
-
-    // for (let i = 0; i < pixels.length; i += 16) {
-    //   let p = aesDecrypt(pixels.slice(i, i + 16), "Thats my Kung Fu");
-    //   newPixels = [...newPixels, ...p];
-    // }
-
     const startTime = performance.now();
     console.log("start");
     let p = [];
@@ -123,7 +140,7 @@ const Inspect = () => {
         p.push(pixels[i]);
       }
       if (p.length === 16) {
-        let enc = aesDecrypt1by1(p, round);
+        let enc = aesDecrypt1by1(p, decryptionRoundKeys, round);
         p = [];
         round = (round + 1) % 11;
         for (let j = 0; j < 16; j++) {
@@ -257,7 +274,7 @@ const Inspect = () => {
           }}
           onLoad={() => {
             if (!webViewLoaded) {
-              const script = loadBase64andSendPixelsScript(base64image);
+              const script = loadBase64andSendPixelsScript(firstBase64image);
               webViewRef.current.injectJavaScript(script);
               webViewLoaded = true;
             }

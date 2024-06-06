@@ -23,7 +23,7 @@ const RegisterPage = () => {
 
   const mockCringe = () => {
     signInWithEmailAndPassword(auth, "q@q.co", "123456")
-      .then((userCredential) => {
+      .then(async (userCredential) => {
         const user = userCredential.user;
         router.replace("/(tabs)/home");
       })

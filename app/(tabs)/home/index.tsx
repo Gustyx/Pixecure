@@ -11,7 +11,6 @@ import {
   FlatList,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import useAuth from "../../hooks/useAuth";
 import withAuthentication from "../../hocs/withAuthentication";
 import { arrayRemove, doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../../../firebase.config";
@@ -30,7 +29,8 @@ import { useNavigation } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import WebView from "react-native-webview";
 import * as ImageManipulator from "expo-image-manipulator";
-import { aesDecrypt1by1 } from "../../aes";
+import { aesDecrypt1by1, generateRoundKeys } from "../../aes";
+import * as Crypto from "expo-crypto";
 
 let key;
 AsyncStorage.getItem("sortingKey").then((value) => {
@@ -57,13 +57,32 @@ const HomePage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
   const [rerenderAfterDecryption, setRerenderAfterDecryption] = useState(false);
-  const user = useAuth();
+  const [decryptionRoundKeys, setDecryptionRoundKeys] = useState([]);
   const router = useRouter();
   const navigation = useNavigation();
   const webViewRef = useRef(null);
 
   useFocusEffect(
     React.useCallback(() => {
+      const generateDecryptionKey = async () => {
+        const uid = auth.currentUser.uid;
+        const digest = await Crypto.digestStringAsync(
+          Crypto.CryptoDigestAlgorithm.SHA256,
+          uid + uid
+        );
+
+        let key = "";
+        for (let i = 0; key.length < 16; ++i) {
+          key =
+            key +
+            digest[uid.charCodeAt(uid.length - 1 - i) % 64] +
+            digest[uid.charCodeAt(i) % 64];
+        }
+
+        const roundKeys = generateRoundKeys(key);
+        setDecryptionRoundKeys(roundKeys);
+      };
+
       const getImages = async () => {
         try {
           const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
@@ -71,65 +90,69 @@ const HomePage = () => {
             let categorizedImagesByPose = {};
             let categorizedImagesByDate = {};
             const data = docSnap.data().images;
-            for (const image of data) {
-              const pose = image.pose;
-              const date = image.date;
-              if (!categorizedImagesByPose[pose]) {
-                categorizedImagesByPose[pose] = [];
-              }
-              categorizedImagesByPose[pose].push(image);
-              if (!categorizedImagesByDate[date]) {
-                categorizedImagesByDate[date] = [];
-              }
-              categorizedImagesByDate[date].push(image);
-              const manipResult = await ImageManipulator.manipulateAsync(
-                image.smallUrl,
-                [],
-                {
-                  format: ImageManipulator.SaveFormat.PNG,
-                  base64: true,
+            if (data) {
+              for (const image of data) {
+                const pose = image.pose;
+                const date = image.date;
+                if (!categorizedImagesByPose[pose]) {
+                  categorizedImagesByPose[pose] = [];
                 }
-              );
-              if (!webViewLoaded) {
-                base64images.push(manipResult.base64);
-                smallUrls.push(image.smallUrl);
-              } else if (base64images.indexOf(manipResult.base64) === -1) {
-                base64images.push(manipResult.base64);
-                smallUrls.push(image.smallUrl);
-                const script = loadBase64andSendPixelsScriptWithIndex(
-                  manipResult.base64,
-                  base64images.length - 1
+                categorizedImagesByPose[pose].push(image);
+                if (!categorizedImagesByDate[date]) {
+                  categorizedImagesByDate[date] = [];
+                }
+                categorizedImagesByDate[date].push(image);
+                const manipResult = await ImageManipulator.manipulateAsync(
+                  image.smallUrl,
+                  [],
+                  {
+                    format: ImageManipulator.SaveFormat.PNG,
+                    base64: true,
+                  }
                 );
-                webViewRef.current.injectJavaScript(script);
+                if (!webViewLoaded) {
+                  base64images.push(manipResult.base64);
+                  smallUrls.push(image.smallUrl);
+                } else if (base64images.indexOf(manipResult.base64) === -1) {
+                  base64images.push(manipResult.base64);
+                  smallUrls.push(image.smallUrl);
+                  const script = loadBase64andSendPixelsScriptWithIndex(
+                    manipResult.base64,
+                    base64images.length - 1
+                  );
+                  webViewRef.current.injectJavaScript(script);
+                }
               }
-            }
-            const pKeys = Object.keys(categorizedImagesByPose);
-            pKeys.sort((keyA, keyB) => {
-              if (!keyA) return 1;
-              if (!keyB) return -1;
-              if (keyA < keyB) return -1;
-              return 1;
-            });
-            const dKeys = Object.keys(categorizedImagesByDate);
-            dKeys.sort((keyA, keyB) => {
-              const [monthA, yearA] = keyA.split(" - ");
-              const [monthB, yearB] = keyB.split(" - ");
-              if (yearA !== yearB) {
-                return parseInt(yearA) > parseInt(yearB) ? -1 : 1;
+              const pKeys = Object.keys(categorizedImagesByPose);
+              pKeys.sort((keyA, keyB) => {
+                if (!keyA) return 1;
+                if (!keyB) return -1;
+                if (keyA < keyB) return -1;
+                return 1;
+              });
+              const dKeys = Object.keys(categorizedImagesByDate);
+              dKeys.sort((keyA, keyB) => {
+                const [monthA, yearA] = keyA.split(" - ");
+                const [monthB, yearB] = keyB.split(" - ");
+                if (yearA !== yearB) {
+                  return parseInt(yearA) > parseInt(yearB) ? -1 : 1;
+                }
+                if (monthA !== monthB) {
+                  return months.indexOf(monthA) > months.indexOf(monthB)
+                    ? -1
+                    : 1;
+                }
+                return 0;
+              });
+              imagesByPose = categorizedImagesByPose;
+              imagesByDate = categorizedImagesByDate;
+              poseKeys = pKeys;
+              dateKeys = dKeys;
+              if (key === "Pose") {
+                updateImageState(categorizedImagesByPose, poseKeys);
+              } else {
+                updateImageState(categorizedImagesByDate, dateKeys);
               }
-              if (monthA !== monthB) {
-                return months.indexOf(monthA) > months.indexOf(monthB) ? -1 : 1;
-              }
-              return 0;
-            });
-            imagesByPose = categorizedImagesByPose;
-            imagesByDate = categorizedImagesByDate;
-            poseKeys = pKeys;
-            dateKeys = dKeys;
-            if (key === "Pose") {
-              updateImageState(categorizedImagesByPose, poseKeys);
-            } else {
-              updateImageState(categorizedImagesByDate, dateKeys);
             }
           } else {
             console.log("No such document!");
@@ -141,6 +164,7 @@ const HomePage = () => {
         }
       };
 
+      generateDecryptionKey();
       getImages();
     }, [])
   );
@@ -262,7 +286,7 @@ const HomePage = () => {
         p.push(webViewMessage[i]);
       }
       if (p.length === 16) {
-        let enc = aesDecrypt1by1(p, round);
+        let enc = aesDecrypt1by1(p, decryptionRoundKeys, round);
         p = [];
         round = (round + 1) % 11;
         for (let j = 0; j < 16; j++) {
