@@ -28,7 +28,7 @@ import {
 } from "../../constants";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
-import { aes1by1, generateRoundKeys } from "../../aes";
+import { aes1by1, generateRoundKeys, oldAes1by1 } from "../../aes";
 import * as Crypto from "expo-crypto";
 
 let webViewLoaded = false;
