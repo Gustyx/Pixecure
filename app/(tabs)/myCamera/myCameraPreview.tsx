@@ -157,7 +157,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           images: arrayUnion({
             url: downloadURLs[0],
             smallUrl: downloadURLs[1],
-            pose: thisImageDetails.pose,
+            category: thisImageDetails.category,
             date: formatedDate,
           }),
         });
@@ -270,17 +270,21 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
   const renderDetails = () => {
     return keys.map((key, i) => (
       <View key={i} style={styles.detailsContainer}>
-        <Text style={{ marginLeft: "10%" }}>{key}: </Text>
-        {key !== "date" ? (
-          <TextInput
-            value={thisImageDetails[key]}
-            onChangeText={(value) => onDetailsTextChange(key, value)}
-            autoCapitalize="sentences"
-            style={styles.input}
-          />
-        ) : (
-          <Text style={styles.input}>{date.toLocaleDateString()}</Text>
-        )}
+        <View style={{ flexDirection: "column" }}>
+          <Text style={styles.detailsText}>
+            {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
+          </Text>
+          {key !== "date" ? (
+            <TextInput
+              value={thisImageDetails[key]}
+              onChangeText={(value) => onDetailsTextChange(key, value)}
+              autoCapitalize="sentences"
+              style={styles.input}
+            />
+          ) : (
+            <Text style={styles.input}>{date.toLocaleDateString()}</Text>
+          )}
+        </View>
       </View>
     ));
   };
@@ -337,11 +341,11 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         </ScrollView>
       )}
       <TouchableOpacity onPress={closeCameraPreview} style={styles.closeButton}>
-        <Text style={styles.buttonText}>X</Text>
+        <Text style={styles.closeButtonText}>X</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={handleSaveImage} style={styles.saveButton}>
-        <Text style={styles.buttonText}>
+        <Text style={styles.saveButtonText}>
           {!displayDetails ? "Details" : "Save"}
         </Text>
       </TouchableOpacity>
@@ -353,43 +357,68 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
-    backgroundColor: "grey",
     flexDirection: "row",
     position: "relative",
     justifyContent: "center",
+    // backgroundColor: "#d3d3d3",
+    backgroundColor: "#708090",
   },
   smallImageButton: {
     alignSelf: "center",
     marginTop: "5%",
-    marginBottom: "10%",
+    marginBottom: "5%",
   },
   detailsContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    marginLeft: "25%",
+    marginVertical: 10,
+  },
+  detailsText: {
+    alignSelf: "flex-start",
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 5,
+    color: "#fff",
   },
   input: {
-    marginVertical: 5,
     width: (screenWidth * 66) / 200,
-    height: (screenHeight * 6.6) / 200,
+    height: (screenHeight * 6.6) / 175,
     backgroundColor: "black",
     borderRadius: 15,
     paddingHorizontal: 10,
-    marginLeft: "10%",
+    alignSelf: "flex-end",
     color: "white",
+    fontSize: 16,
   },
   closeButton: {
     position: "absolute",
     backgroundColor: "black",
     top: "5%",
     right: "5%",
+    width: 30,
+    height: 30,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: "#fff",
   },
   saveButton: {
+    width: (screenWidth * 66) / 300,
+    height: (screenHeight * 7.5) / 150,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    margin: "auto",
     position: "absolute",
     backgroundColor: "black",
-    bottom: "5%",
+    bottom: "4.5%",
     right: "5%",
   },
-  buttonText: {
+  saveButtonText: {
     fontSize: 20,
     color: "#fff",
   },

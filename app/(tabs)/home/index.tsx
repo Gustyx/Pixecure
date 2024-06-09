@@ -40,9 +40,9 @@ AsyncStorage.getItem("sortingKey").then((value) => {
     key = "Date";
   }
 });
-let imagesByPose = {};
+let imagesByCategory = {};
 let imagesByDate = {};
-let poseKeys = [];
+let categoryKeys = [];
 let dateKeys = [];
 let webViewLoaded = false;
 let base64images = [];
@@ -87,17 +87,17 @@ const HomePage = () => {
         try {
           const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
           if (docSnap.exists()) {
-            let categorizedImagesByPose = {};
+            let categorizedImagesByCategory = {};
             let categorizedImagesByDate = {};
             const data = docSnap.data().images;
             if (data) {
               for (const image of data) {
-                const pose = image.pose;
+                const category = image.category;
                 const date = image.date;
-                if (!categorizedImagesByPose[pose]) {
-                  categorizedImagesByPose[pose] = [];
+                if (!categorizedImagesByCategory[category]) {
+                  categorizedImagesByCategory[category] = [];
                 }
-                categorizedImagesByPose[pose].push(image);
+                categorizedImagesByCategory[category].push(image);
                 if (!categorizedImagesByDate[date]) {
                   categorizedImagesByDate[date] = [];
                 }
@@ -123,7 +123,7 @@ const HomePage = () => {
                   webViewRef.current.injectJavaScript(script);
                 }
               }
-              const pKeys = Object.keys(categorizedImagesByPose);
+              const pKeys = Object.keys(categorizedImagesByCategory);
               pKeys.sort((keyA, keyB) => {
                 if (!keyA) return 1;
                 if (!keyB) return -1;
@@ -144,12 +144,12 @@ const HomePage = () => {
                 }
                 return 0;
               });
-              imagesByPose = categorizedImagesByPose;
+              imagesByCategory = categorizedImagesByCategory;
               imagesByDate = categorizedImagesByDate;
-              poseKeys = pKeys;
+              categoryKeys = pKeys;
               dateKeys = dKeys;
-              if (key === "Pose") {
-                updateImageState(categorizedImagesByPose, poseKeys);
+              if (key === "Category") {
+                updateImageState(categorizedImagesByCategory, categoryKeys);
               } else {
                 updateImageState(categorizedImagesByDate, dateKeys);
               }
@@ -182,8 +182,8 @@ const HomePage = () => {
     try {
       await AsyncStorage.setItem("sortingKey", newKey);
       key = newKey;
-      if (newKey === "Pose") {
-        updateImageState(imagesByPose, poseKeys);
+      if (newKey === "Category") {
+        updateImageState(imagesByCategory, categoryKeys);
       } else {
         updateImageState(imagesByDate, dateKeys);
       }
@@ -198,7 +198,7 @@ const HomePage = () => {
     const param = {
       url: imageUrl,
       smallUrl: encodeURIComponent(image.smallUrl),
-      pose: image.pose,
+      category: image.category,
       date: image.date,
       decryptedSmallUrl: decryptedBase64images[index],
     };
@@ -232,26 +232,26 @@ const HomePage = () => {
       images: arrayRemove({
         url: image.url,
         smallUrl: image.smallUrl,
-        pose: image.pose,
+        category: image.category,
         date: image.date,
       }),
     });
 
-    imagesByPose[image.pose] = imagesByPose[image.pose].filter(
+    imagesByCategory[image.category] = imagesByCategory[image.category].filter(
       (item) => !(item.url === image.url)
     );
     imagesByDate[image.date] = imagesByDate[image.date].filter(
       (item) => !(item.url === image.url)
     );
-    if (imagesByPose[image.pose].length === 0) {
-      poseKeys = poseKeys.filter((item) => item !== image.pose);
+    if (imagesByCategory[image.category].length === 0) {
+      categoryKeys = categoryKeys.filter((item) => item !== image.category);
     }
     if (imagesByDate[image.date].length === 0) {
       dateKeys = dateKeys.filter((item) => item !== image.date);
     }
 
-    if (key === "Pose") {
-      updateImageState(imagesByPose, poseKeys);
+    if (key === "Category") {
+      updateImageState(imagesByCategory, categoryKeys);
     } else {
       updateImageState(imagesByDate, dateKeys);
     }
@@ -269,15 +269,6 @@ const HomePage = () => {
   };
 
   const getDecryptedImageUrl = (webViewMessage) => {
-    // let newPixels = webViewMessage;
-    // for (let i = 0; i < newPixels.length - 1; i += 4) {
-    //   newPixels[i] = 255 - newPixels[i]; // Invert Red
-    //   newPixels[i + 1] = 255 - newPixels[i + 1]; // Invert Green
-    //   newPixels[i + 2] = 255 - newPixels[i + 2]; // Invert Blue
-    //   // newPixels[i + 3] = 255 - newPixels[i + 3]; // Invert Blue
-    // }
-
-    // console.log(webViewMessage);
     let newPixels = [];
     let p = [];
     let round = 0;
@@ -323,7 +314,7 @@ const HomePage = () => {
       >
         <Image
           source={{
-            uri: `data:image/jpeg;base64,${
+            uri: `data:image/png;base64,${
               decryptedBase64images[smallUrls.indexOf(item.smallUrl)]
             }`,
           }}
@@ -336,7 +327,7 @@ const HomePage = () => {
 
   const renderCategory = useCallback(
     ({ item: category }) => (
-      <View style={styles.categorySection}>
+      <View>
         <Text style={styles.categoryTitle}>{category ? category : "None"}</Text>
         <FlatList
           data={imageState.categorizedImages[category]}
@@ -359,7 +350,7 @@ const HomePage = () => {
           visible={menuVisible}
           anchor={
             <TouchableOpacity onPress={openMenu}>
-              <Text>Sorted by: {key}</Text>
+              <Text style={{ fontSize: 16 }}>Sorted by: {key}</Text>
             </TouchableOpacity>
           }
           onRequestClose={closeMenu}
@@ -368,15 +359,17 @@ const HomePage = () => {
             onPress={() => {
               handleSortChange("Date");
             }}
+            style={{ backgroundColor: "#d3d3d3" }}
           >
             Date
           </MenuItem>
           <MenuItem
             onPress={() => {
-              handleSortChange("Pose");
+              handleSortChange("Category");
             }}
+            style={{ backgroundColor: "#d3d3d3" }}
           >
-            Pose
+            Category
           </MenuItem>
         </Menu>
       ),
@@ -386,7 +379,7 @@ const HomePage = () => {
   if (loading) {
     return (
       <View style={styles.activityIndicator}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#d3d3d3" />
       </View>
     );
   }
@@ -419,7 +412,7 @@ const HomePage = () => {
         </View>
       ) : (
         <View style={styles.noImages}>
-          <Text>No images to display.</Text>
+          <Text style={styles.noImagesText}>No images to display.</Text>
         </View>
       )}
       <StatusBar style="auto" />
@@ -430,17 +423,16 @@ const HomePage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "transparent",
     flexDirection: "row",
-  },
-  categorySection: {
-    // marginBottom: 20,
+    // backgroundColor: "#d3d3d3",
+    backgroundColor: "#708090",
   },
   categoryTitle: {
     fontSize: 18,
     fontWeight: "bold",
     marginLeft: 5,
     marginVertical: 5,
+    color: "#fff",
   },
   imageWrapper: {
     padding: 1,
@@ -453,11 +445,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    // backgroundColor: "#d3d3d3",
+    backgroundColor: "#708090",
   },
   noImages: {
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
+    // backgroundColor: "#d3d3d3",
+    backgroundColor: "#708090",
+  },
+  noImagesText: {
+    fontWeight: "bold",
+    fontSize: 18,
+    color: "#fff",
   },
 });
 

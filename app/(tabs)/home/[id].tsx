@@ -28,7 +28,11 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
-import { aesDecrypt1by1, generateRoundKeys } from "../../aes";
+import {
+  aesDecrypt1by1,
+  generateRoundKeys,
+  oldAesDecrypt1by1,
+} from "../../aes";
 import * as Crypto from "expo-crypto";
 
 let selectedDate: Date;
@@ -156,10 +160,6 @@ const Inspect = () => {
 
     console.log("Elapsed time for decryption:", elapsedTime);
 
-    // console.log(pixels.length);
-    // console.log(newPixels.length);
-    // console.log("old:", pixels);
-    // console.log("new:", newPixels);
     const newPixelData = JSON.stringify(newPixels);
     const script = loadPixelsAndSendNewBase64Script(base64image, newPixelData);
     webViewRef.current.injectJavaScript(script);
@@ -190,12 +190,15 @@ const Inspect = () => {
       const currentUserId = auth.currentUser?.uid;
       const userRef = doc(db, "users", currentUserId);
       const date = formatDate(thisImageDetails["date"]);
-      if (thisImageDetails.pose !== params.pose || date !== params.date) {
+      if (
+        thisImageDetails.category !== params.category ||
+        date !== params.date
+      ) {
         await updateDoc(userRef, {
           images: arrayRemove({
             url: params.url,
             smallUrl: params.smallUrl,
-            pose: params.pose,
+            category: params.category,
             date: params.date,
           }),
         });
@@ -203,7 +206,7 @@ const Inspect = () => {
           images: arrayUnion({
             url: imageUrl,
             smallUrl: params.smallUrl,
-            pose: thisImageDetails.pose,
+            category: thisImageDetails.category,
             date: date,
           }),
         });
@@ -224,24 +227,27 @@ const Inspect = () => {
   const renderDetails = () => {
     return keys.map((key, i) => (
       <View key={i} style={styles.detailsContainer}>
-        <Text style={{ marginLeft: "10%" }}>{key}: </Text>
-        {key !== "date" ? (
-          <TextInput
-            value={thisImageDetails[key]}
-            onChangeText={(value) => onDetailsTextChange(key, value)}
-            autoCapitalize="sentences"
-            style={styles.input}
-          />
-        ) : (
-          <TouchableOpacity
-            onPress={() => {
-              setShowCalendar(true);
-            }}
-            style={styles.input}
-          >
-            <Text style={{ color: "white" }}>{thisImageDetails["date"]}</Text>
-          </TouchableOpacity>
-        )}
+        <View style={{ flexDirection: "column" }}>
+          <Text style={styles.detailsText}>
+            {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
+          </Text>
+          {key !== "date" ? (
+            <TextInput
+              value={thisImageDetails[key]}
+              onChangeText={(value) => onDetailsTextChange(key, value)}
+              autoCapitalize="sentences"
+              style={styles.input}
+            />
+          ) : (
+            <TouchableOpacity
+              onPress={() => {
+                setShowCalendar(true);
+              }}
+            >
+              <Text style={styles.input}>{thisImageDetails["date"]}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     ));
   };
@@ -263,7 +269,15 @@ const Inspect = () => {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ headerTitle: "Inspect Page" }} />
+      <Stack.Screen
+        options={{
+          headerTitle: "Inspect Page",
+          headerStyle: {
+            backgroundColor: "#d3d3d3",
+            // backgroundColor: "#708090",
+          },
+        }}
+      />
       {base64image && (
         <WebView
           ref={webViewRef}
@@ -323,10 +337,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
-    backgroundColor: "grey",
     flexDirection: "row",
     position: "relative",
     justifyContent: "center",
+    // backgroundColor: "#d3d3d3",
+    backgroundColor: "#708090",
   },
   bigImage: {
     width: screenWidth,
@@ -341,26 +356,40 @@ const styles = StyleSheet.create({
   smallImageButton: {
     alignSelf: "center",
     marginTop: "5%",
-    marginBottom: "10%",
+    marginBottom: "5%",
   },
   detailsContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    marginLeft: "25%",
+    marginVertical: 10,
+  },
+  detailsText: {
+    alignSelf: "flex-start",
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 5,
+    color: "#fff",
   },
   input: {
-    marginVertical: 5,
     width: (screenWidth * 66) / 200,
-    height: (screenHeight * 6.6) / 200,
+    height: (screenHeight * 6.6) / 175,
     backgroundColor: "black",
     borderRadius: 15,
     paddingHorizontal: 10,
-    marginLeft: "10%",
+    alignSelf: "flex-end",
     color: "white",
+    fontSize: 16,
   },
   editButton: {
+    width: (screenWidth * 66) / 300,
+    height: (screenHeight * 7.5) / 150,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    margin: "auto",
     position: "absolute",
     backgroundColor: "black",
-    bottom: "5%",
+    bottom: "4.5%",
     right: "5%",
   },
   buttonText: {

@@ -31,10 +31,6 @@ const MyCamera = () => {
         setCameraActive(false);
       }
     })();
-
-    return () => {
-      // Cleanup logic: Remove event listeners or release resources
-    };
   }, []);
 
   useFocusEffect(
@@ -145,9 +141,10 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flex: 1,
-    backgroundColor: "black",
     justifyContent: "center",
     alignItems: "center",
+    // backgroundColor: "#d3d3d3",
+    backgroundColor: "#708090",
   },
   captureButton: {
     width: 60,

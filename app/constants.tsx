@@ -3,9 +3,7 @@ import { Dimensions } from "react-native";
 import { storage } from "../firebase.config";
 
 export interface ImageDetails {
-  pose: string;
-  kg: string;
-  bf: string;
+  category: string;
   date: string;
   extra: string;
 }
@@ -15,9 +13,7 @@ export const imagesPerRow = 7;
 export const imageFolderPath = "images/";
 export const smallImageFolderPath = "small_images/";
 export const imageDetails: ImageDetails = {
-  pose: "",
-  kg: "",
-  bf: "",
+  category: "",
   date: "",
   extra: "",
 };
@@ -60,12 +56,7 @@ export const getSmallImageRef = (imageUrl) => {
   return imageRef;
 };
 
-// img.src = 'data:image/jpeg;base64,${base64string}';
 export const loadBase64andSendPixelsScript = (base64string) => {
-  // console.log(base64string);
-  // img.src = 'data:image/png;base64,${base64string}';
-
-  // img.src = '${base64string}';
   const script = `
   (function() {
     const img = new Image();
@@ -104,7 +95,7 @@ export const loadBase64andSendPixelsScriptWithIndex = (base64string, index) => {
   `;
   return script;
 };
-// img.src = 'data:image/png;base64,${oldBase64string}';
+
 export const loadPixelsAndSendNewBase64Script = (
   oldBase64string,
   newPixels
