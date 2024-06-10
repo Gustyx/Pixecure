@@ -9,7 +9,6 @@ const Layout = () => {
           headerTitle: "Home Page",
           headerStyle: {
             backgroundColor: "#d3d3d3",
-            // backgroundColor: "#708090",
           },
         }}
       />

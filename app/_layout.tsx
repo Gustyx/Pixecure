@@ -6,10 +6,9 @@ const Layout = () => {
       <Stack.Screen
         name="index"
         options={{
-          headerTitle: "Fitness ProTrack",
+          headerTitle: "Pixecure",
           headerStyle: {
             backgroundColor: "#d3d3d3",
-            // backgroundColor: "#708090",
           },
         }}
       />
@@ -19,7 +18,6 @@ const Layout = () => {
           headerTitle: "Register Page",
           headerStyle: {
             backgroundColor: "#d3d3d3",
-            // backgroundColor: "#708090",
           },
         }}
       />
@@ -29,7 +27,6 @@ const Layout = () => {
           headerTitle: "Login Page",
           headerStyle: {
             backgroundColor: "#d3d3d3",
-            // backgroundColor: "#708090",
           },
         }}
       />

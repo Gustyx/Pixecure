@@ -29,7 +29,7 @@ import { useNavigation } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import WebView from "react-native-webview";
 import * as ImageManipulator from "expo-image-manipulator";
-import { aesDecrypt1by1, generateRoundKeys } from "../../aes";
+import { aesDecrypt, generateRoundKeys } from "../../aes";
 import * as Crypto from "expo-crypto";
 
 let key;
@@ -277,7 +277,7 @@ const HomePage = () => {
         p.push(webViewMessage[i]);
       }
       if (p.length === 16) {
-        let enc = aesDecrypt1by1(p, decryptionRoundKeys, round);
+        let enc = aesDecrypt(p, decryptionRoundKeys, round);
         p = [];
         round = (round + 1) % 11;
         for (let j = 0; j < 16; j++) {
@@ -424,7 +424,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: "row",
-    // backgroundColor: "#d3d3d3",
     backgroundColor: "#708090",
   },
   categoryTitle: {
@@ -445,14 +444,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    // backgroundColor: "#d3d3d3",
     backgroundColor: "#708090",
   },
   noImages: {
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    // backgroundColor: "#d3d3d3",
     backgroundColor: "#708090",
   },
   noImagesText: {

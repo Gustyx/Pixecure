@@ -302,7 +302,7 @@ const invMixColumnsAndAddRoundKey = (mat1, mat2, keys) => {
   return mixedBlock;
 };
 
-export const aes1by1 = (input, keys, round) => {
+export const aesEncrypt = (input, keys, round) => {
   const roundKeys = keys;
   let byteBlock = [[], [], [], []];
 
@@ -333,7 +333,7 @@ export const aes1by1 = (input, keys, round) => {
 
   return cipher;
 };
-export const aesDecrypt1by1 = (input, keys, round) => {
+export const aesDecrypt = (input, keys, round) => {
   let reversedKeys = keys;
   let byteBlock = [[], [], [], []];
 
@@ -366,156 +366,5 @@ export const aesDecrypt1by1 = (input, keys, round) => {
     }
   }
 
-  return plain;
-};
-
-export const oldAes1by1 = (input, keys, round) => {
-  const roundKeys = keys;
-  let byteBlock = [[], [], [], []];
-
-  for (let i = 0; i < 4; ++i) {
-    for (let j = 0; j < 4; ++j) {
-      byteBlock[j][i] = input[i * 4 + j];
-    }
-  }
-
-  if (round === 0) {
-    byteBlock = addRoundKey(byteBlock, roundKeys.slice(0, 4));
-  } else {
-    byteBlock = subBytesAndShiftRows(byteBlock);
-    const roundKey = roundKeys.slice(round * 4, (round + 1) * 4);
-
-    if (round < 10) {
-      byteBlock = mixColumnsAndAddRoundKey(fixedMatrix, byteBlock, roundKey);
-    } else {
-      byteBlock = addRoundKey(byteBlock, roundKey);
-    }
-  }
-
-  let cipher = [];
-  for (let i = 0; i < 4; ++i) {
-    for (let j = 0; j < 4; ++j) {
-      cipher.push(byteBlock[j][i]);
-    }
-  }
-
-  return cipher;
-};
-export const oldAesDecrypt1by1 = (input, keys, round) => {
-  let reversedKeys = keys;
-  let byteBlock = [[], [], [], []];
-
-  for (let i = 0; i < 4; ++i) {
-    for (let j = 0; j < 4; ++j) {
-      byteBlock[j][i] = input[i * 4 + j];
-    }
-  }
-
-  if (round === 0) {
-    byteBlock = addRoundKey(byteBlock, reversedKeys.slice(0, 4));
-  } else {
-    const roundKey = reversedKeys.slice(round * 4, (round + 1) * 4);
-    if (round < 10) {
-      byteBlock = invMixColumnsAndAddRoundKey(
-        invFixedMatrix,
-        byteBlock,
-        roundKey
-      );
-    } else {
-      byteBlock = addRoundKey(byteBlock, roundKey);
-    }
-    byteBlock = invShiftRowAndSubBytes(byteBlock);
-  }
-
-  let plain = [];
-  for (let i = 0; i < 4; ++i) {
-    for (let j = 0; j < 4; ++j) {
-      plain.push(byteBlock[j][i]);
-    }
-  }
-
-  return plain;
-};
-
-export const aes = (input, keys) => {
-  // const roundKeys = generateRoundKeys(key);
-  const roundKeys = keys;
-  let byteBlock = [[], [], [], []];
-
-  for (let i = 0; i < 4; ++i) {
-    for (let j = 0; j < 4; ++j) {
-      byteBlock[j][i] = input[i * 4 + j];
-    }
-  }
-
-  byteBlock = addRoundKey(byteBlock, roundKeys.slice(0, 4));
-
-  for (let round = 1; round < 11; ++round) {
-    byteBlock = subBytesAndShiftRows(byteBlock);
-    const roundKey = roundKeys.slice(round * 4, (round + 1) * 4);
-
-    if (round < 10) {
-      byteBlock = mixColumnsAndAddRoundKey(fixedMatrix, byteBlock, roundKey);
-    } else {
-      byteBlock = addRoundKey(byteBlock, roundKey);
-    }
-  }
-
-  // console.log("cipher:", hexBlock);
-  let cipher = [];
-  for (let i = 0; i < 4; ++i) {
-    for (let j = 0; j < 4; ++j) {
-      cipher.push(byteBlock[j][i]);
-    }
-  }
-
-  // console.log("input:", input);
-  // console.log("encrypt:", cipher);
-
-  // aesDecrypt(cipher, key);
-  return cipher;
-};
-
-export const aesDecrypt = (input, keys) => {
-  // const keys = generateRoundKeys(key);
-  let reversedKeys = [];
-  for (let i = keys.length - 4; i >= 0; i -= 4) {
-    reversedKeys.push(keys[i], keys[i + 1], keys[i + 2], keys[i + 3]);
-  }
-  let byteBlock = [[], [], [], []];
-
-  for (let i = 0; i < 4; ++i) {
-    for (let j = 0; j < 4; ++j) {
-      byteBlock[j][i] = input[i * 4 + j];
-    }
-  }
-
-  byteBlock = addRoundKey(byteBlock, reversedKeys.slice(0, 4));
-
-  for (let round = 1; round < 11; ++round) {
-    byteBlock = invShiftRowAndSubBytes(byteBlock);
-    const roundKey = reversedKeys.slice(round * 4, (round + 1) * 4);
-
-    if (round < 10) {
-      byteBlock = invMixColumnsAndAddRoundKey(
-        invFixedMatrix,
-        byteBlock,
-        roundKey
-      );
-    } else {
-      byteBlock = addRoundKey(byteBlock, roundKey);
-    }
-  }
-
-  // console.log("plain:", hexBlock);
-  let plain = [];
-  for (let i = 0; i < 4; ++i) {
-    for (let j = 0; j < 4; ++j) {
-      plain.push(byteBlock[j][i]);
-    }
-  }
-
-  // console.log("input:", input);
-  // console.log("decrypt:", pixels);
   return plain;
 };

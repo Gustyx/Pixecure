@@ -28,7 +28,7 @@ import {
 } from "../../constants";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
-import { aes1by1, generateRoundKeys, oldAes1by1 } from "../../aes";
+import { aesEncrypt, generateRoundKeys } from "../../aes";
 import * as Crypto from "expo-crypto";
 
 let webViewLoaded = false;
@@ -125,7 +125,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         setSmallPixels(webViewMessage);
       }
     } else {
-      // saveImage(webViewMessage);
       if (!newBase64) {
         newBase64 = webViewMessage;
       } else {
@@ -198,9 +197,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     if (!displayDetails) setDisplayDetails(true);
     else {
       let newPixels = [];
-
-      console.log("start");
-      let startTime = performance.now();
       let p = [];
       let round = 0;
       for (let i = 0; i < pixels.length; i++) {
@@ -208,7 +204,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           p.push(pixels[i]);
         }
         if (p.length === 16) {
-          let enc = aes1by1(p, encryptionRoundKeys, round);
+          let enc = aesEncrypt(p, encryptionRoundKeys, round);
           p = [];
           round = (round + 1) % 11;
           for (let j = 0; j < 16; j++) {
@@ -219,9 +215,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           }
         }
       }
-      let endTime = performance.now();
-      let elapsedTime = endTime - startTime;
-      console.log("Elapsed time for encryption:", elapsedTime);
 
       const newPixelData = JSON.stringify(newPixels);
       const script = loadPixelsAndSendNewBase64Script(
@@ -231,9 +224,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
       webViewRef.current.injectJavaScript(script);
 
       let newSmallPixels = [];
-
-      console.log("start");
-      startTime = performance.now();
       p = [];
       round = 0;
 
@@ -242,7 +232,7 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           p.push(smallPixels[i]);
         }
         if (p.length === 16) {
-          let enc = aes1by1(p, encryptionRoundKeys, round);
+          let enc = aesEncrypt(p, encryptionRoundKeys, round);
           p = [];
           round = (round + 1) % 11;
           for (let j = 0; j < 16; j++) {
@@ -253,10 +243,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
           }
         }
       }
-      endTime = performance.now();
-      elapsedTime = endTime - startTime;
-
-      console.log("Elapsed time for encryption:", elapsedTime);
 
       const newSmallPixelData = JSON.stringify(newSmallPixels);
       const smallScript = loadPixelsAndSendNewBase64Script(
@@ -360,7 +346,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     position: "relative",
     justifyContent: "center",
-    // backgroundColor: "#d3d3d3",
     backgroundColor: "#708090",
   },
   smallImageButton: {

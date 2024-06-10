@@ -9,7 +9,6 @@ const Layout = () => {
           headerTitle: "Take a picture",
           headerStyle: {
             backgroundColor: "#d3d3d3",
-            // backgroundColor: "#708090",
           },
         }}
       />

@@ -9,8 +9,6 @@ export default () => {
         tabBarActiveTintColor: "#708090",
         tabBarActiveBackgroundColor: "#d3d3d3",
         tabBarInactiveBackgroundColor: "#d3d3d3",
-        // backgroundColor: "#d3d3d3",
-        // backgroundColor: "#708090",
       }}
     >
       <Tabs.Screen

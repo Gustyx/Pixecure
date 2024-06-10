@@ -35,24 +35,14 @@ const MyCamera = () => {
 
   useFocusEffect(
     React.useCallback(() => {
-      // Code to execute when the tab screen is focused
       setCameraActive(true);
-
-      return () => {
-        // Optional cleanup code
-      };
     }, [])
   );
 
   useEffect(() => {
     if (!isFocused) {
-      // Code to execute when leaving the tab
       setCameraActive(null);
     }
-
-    return () => {
-      // Cleanup function to execute when leaving the tab
-    };
   }, [isFocused]);
 
   const takePicture = async () => {
@@ -143,7 +133,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    // backgroundColor: "#d3d3d3",
     backgroundColor: "#708090",
   },
   captureButton: {

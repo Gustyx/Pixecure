@@ -28,11 +28,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 import * as ImageManipulator from "expo-image-manipulator";
 import { WebView } from "react-native-webview";
-import {
-  aesDecrypt1by1,
-  generateRoundKeys,
-  oldAesDecrypt1by1,
-} from "../../aes";
+import { aesDecrypt, generateRoundKeys } from "../../aes";
 import * as Crypto from "expo-crypto";
 
 let selectedDate: Date;
@@ -135,8 +131,6 @@ const Inspect = () => {
 
   const getDecryptedImageUrl = (pixels) => {
     let newPixels = [];
-    const startTime = performance.now();
-    console.log("start");
     let p = [];
     let round = 0;
     for (let i = 0; i < pixels.length; i++) {
@@ -144,7 +138,7 @@ const Inspect = () => {
         p.push(pixels[i]);
       }
       if (p.length === 16) {
-        let enc = aesDecrypt1by1(p, decryptionRoundKeys, round);
+        let enc = aesDecrypt(p, decryptionRoundKeys, round);
         p = [];
         round = (round + 1) % 11;
         for (let j = 0; j < 16; j++) {
@@ -155,10 +149,6 @@ const Inspect = () => {
         }
       }
     }
-    const endTime = performance.now();
-    const elapsedTime = endTime - startTime;
-
-    console.log("Elapsed time for decryption:", elapsedTime);
 
     const newPixelData = JSON.stringify(newPixels);
     const script = loadPixelsAndSendNewBase64Script(base64image, newPixelData);
@@ -274,7 +264,6 @@ const Inspect = () => {
           headerTitle: "Inspect Page",
           headerStyle: {
             backgroundColor: "#d3d3d3",
-            // backgroundColor: "#708090",
           },
         }}
       />
@@ -340,7 +329,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     position: "relative",
     justifyContent: "center",
-    // backgroundColor: "#d3d3d3",
     backgroundColor: "#708090",
   },
   bigImage: {
