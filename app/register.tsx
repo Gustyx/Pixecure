@@ -42,21 +42,17 @@ const RegisterPage = () => {
     createUserWithEmailAndPassword(auth, email, password)
       .then(async () => {
         Alert.alert("User created successfully!");
-        // await addDoc(collection(db, "users"), {
-        //   uid: auth.currentUser?.uid,
-        // })
-        //   .then(() => {
-        //     router.replace("/home");
-        //   })
-        //   .catch((error) => {
-        //     Alert.alert("Error:", error.message);
-        //   });
         const uid = auth.currentUser?.uid;
         const userRef = doc(db, "users", uid);
         await setDoc(userRef, {
-          uid: uid,
-        });
-        router.replace("/home");
+          images: [],
+        })
+          .then(() => {
+            router.replace("/home");
+          })
+          .catch((error) => {
+            Alert.alert("Error:", error.message);
+          });
       })
       .catch((error) => {
         if (error.code === "auth/email-already-in-use") {
@@ -90,7 +86,7 @@ const RegisterPage = () => {
         autoCapitalize="none"
         style={styles.input}
       />
-      <TouchableOpacity onPress={mockCringe} style={styles.signupButton}>
+      <TouchableOpacity onPress={signUp} style={styles.signupButton}>
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
     </View>
@@ -100,7 +96,7 @@ const RegisterPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // justifyContent: "center",
+    justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f2f2f2",
   },

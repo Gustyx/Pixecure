@@ -92,7 +92,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
             base64: true,
           }
         );
-        console.log(smallManipResult.height);
         base64image = manipResult.base64;
         smallBase64image = smallManipResult.base64;
         if (webViewLoaded) {
@@ -197,22 +196,50 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
     if (!displayDetails) setDisplayDetails(true);
     else {
       let newPixels = [];
-      let p = [];
+      let pixelBlock = [];
+      let newSmallPixels = [];
+      let smallPixelBlock = [];
+      let encryptSmall = true;
       let round = 0;
+
       for (let i = 0; i < pixels.length; i++) {
-        if ((i + 1) % 4 !== 0) {
-          p.push(pixels[i]);
+        if (i >= smallPixels.length) {
+          encryptSmall = false;
         }
-        if (p.length === 16) {
-          let enc = aesEncrypt(p, encryptionRoundKeys, round);
-          p = [];
-          round = (round + 1) % 11;
+        if ((i + 1) % 4 !== 0) {
+          pixelBlock.push(pixels[i]);
+          if (encryptSmall) {
+            smallPixelBlock.push(smallPixels[i]);
+          }
+        }
+        if (pixelBlock.length === 16) {
+          let encryptedPixels = aesEncrypt(
+            pixelBlock,
+            encryptionRoundKeys,
+            round
+          );
+          if (encryptSmall) {
+            var smallEncryptedPixels = aesEncrypt(
+              smallPixelBlock,
+              encryptionRoundKeys,
+              round
+            );
+          }
           for (let j = 0; j < 16; j++) {
-            newPixels.push(enc[j]);
+            newPixels.push(encryptedPixels[j]);
+            if (encryptSmall) {
+              newSmallPixels.push(smallEncryptedPixels[j]);
+            }
             if ((newPixels.length + 1) % 4 === 0) {
               newPixels.push(255);
+              if (encryptSmall) {
+                newSmallPixels.push(255);
+              }
             }
           }
+          pixelBlock = [];
+          smallPixelBlock = [];
+          round = (round + 1) % 11;
         }
       }
 
@@ -222,27 +249,6 @@ const MyCameraPreview = ({ onExitPreview, image }) => {
         newPixelData
       );
       webViewRef.current.injectJavaScript(script);
-
-      let newSmallPixels = [];
-      p = [];
-      round = 0;
-
-      for (let i = 0; i < smallPixels.length; i++) {
-        if ((i + 1) % 4 !== 0) {
-          p.push(smallPixels[i]);
-        }
-        if (p.length === 16) {
-          let enc = aesEncrypt(p, encryptionRoundKeys, round);
-          p = [];
-          round = (round + 1) % 11;
-          for (let j = 0; j < 16; j++) {
-            newSmallPixels.push(enc[j]);
-            if ((newSmallPixels.length + 1) % 4 === 0) {
-              newSmallPixels.push(255);
-            }
-          }
-        }
-      }
 
       const newSmallPixelData = JSON.stringify(newSmallPixels);
       const smallScript = loadPixelsAndSendNewBase64Script(
