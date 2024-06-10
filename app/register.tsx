@@ -1,8 +1,5 @@
 import { auth, db } from "../firebase.config";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import {
   TouchableOpacity,
   View,
@@ -13,30 +10,13 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
-import { addDoc, collection, doc, setDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { screenHeight, screenWidth } from "./constants";
 
 const RegisterPage = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const router = useRouter();
-
-  const mockCringe = () => {
-    signInWithEmailAndPassword(auth, "q@q.co", "123456")
-      .then(async (userCredential) => {
-        const user = userCredential.user;
-        router.replace("/(tabs)/home");
-      })
-      .catch((error) => {
-        if (error.code === "auth/invalid-login-credentials") {
-          Alert.alert("Login credentials are invalid!");
-        }
-        if (error.code === "auth/invalid-email") {
-          Alert.alert("That email address is invalid!");
-        }
-        console.error(error);
-      });
-  };
 
   const signUp = () => {
     createUserWithEmailAndPassword(auth, email, password)
