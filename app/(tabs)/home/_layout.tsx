@@ -6,7 +6,7 @@ const Layout = () => {
       <Stack.Screen
         name="index"
         options={{
-          headerTitle: "Home Page",
+          headerTitle: "Pixecure",
           headerStyle: {
             backgroundColor: "#d3d3d3",
           },

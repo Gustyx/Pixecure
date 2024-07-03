@@ -15,7 +15,7 @@ const Layout = () => {
       <Stack.Screen
         name="register"
         options={{
-          headerTitle: "Register Page",
+          headerTitle: "Pixecure",
           headerStyle: {
             backgroundColor: "#d3d3d3",
           },
@@ -24,7 +24,7 @@ const Layout = () => {
       <Stack.Screen
         name="login"
         options={{
-          headerTitle: "Login Page",
+          headerTitle: "Pixecure",
           headerStyle: {
             backgroundColor: "#d3d3d3",
           },

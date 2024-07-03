@@ -69,6 +69,16 @@ const RegisterPage = () => {
       <TouchableOpacity onPress={signUp} style={styles.signupButton}>
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          router.replace("/login");
+        }}
+        style={styles.logInAccountButton}
+      >
+        <Text style={styles.logInAccountButtonText}>
+          Already have an account? Log In
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -84,7 +94,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 20,
+    marginBottom: 5,
   },
   input: {
     marginVertical: 10,
@@ -103,10 +113,23 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
-    margin: "auto",
   },
   buttonText: {
     color: "white",
+  },
+  logInAccountButton: {
+    backgroundColor: "transparent",
+    marginTop: 25,
+    width: (screenWidth * 66) / 100,
+    height: (screenHeight * 7.5) / 100 / 2,
+    borderWidth: 1,
+    borderColor: "black",
+    borderRadius: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  logInAccountButtonText: {
+    color: "black",
   },
 });
 
